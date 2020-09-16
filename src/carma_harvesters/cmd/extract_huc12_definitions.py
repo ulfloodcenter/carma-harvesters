@@ -11,97 +11,16 @@ from collections import OrderedDict
 
 import rasterstats
 
+from .. common import DATA_BASENAMES, verify_raw_data, verify_input, verify_outpath
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order
 from .. crops.cropscape import calculate_huc12_crop_area
 
+
 HUC12_PATT = re.compile('^\s*([0-9]{12}),*\s*$')
-
-DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
-                  'flowline': 'NHDFlowline_Network.sqlite',
-                  'nlcd': 'NLCD_2016_Land_Cover_L48_20190424-WGS84.tif',
-                  'cdl': '2019_30m_cdls.tif'}
-
 NLCD_HIGHLY_DEVELOPED_DN = 24
 
 logger = logging.getLogger(__name__)
-
-
-def _verify_data(data_path: str) -> (bool, dict):
-    errors = []
-    data_ok = True
-
-    # Verify water boundary dataset
-    wbd_path = os.path.join(data_path, DATA_BASENAMES['wbd'])
-    if not os.path.exists(wbd_path):
-        data_ok = False
-        errors.append(f"WBD should exist at {wbd_path} but does not.")
-    elif not os.access(wbd_path, os.R_OK):
-        data_ok = False
-        errors.append(f"WBD dataset {wbd_path} is not readable.")
-
-    # Verify Flowline dataset
-    flowline_path = os.path.join(data_path, DATA_BASENAMES['flowline'])
-    if not os.path.exists(flowline_path):
-        data_ok = False
-        errors.append(f"NHD Flowline dataset {flowline_path} does not exist.")
-    elif not os.access(flowline_path, os.R_OK):
-        data_ok = False
-        errors.append(f"NHD Flowline dataset {flowline_path} is not readable.")
-
-    # Verify NLCD dataset
-    nlcd_path = os.path.join(data_path, DATA_BASENAMES['nlcd'])
-    if not os.path.exists(nlcd_path):
-        data_ok = False
-        errors.append(f"NLCD dataset {nlcd_path} does not exist.")
-    elif not os.access(nlcd_path, os.R_OK):
-        data_ok = False
-        errors.append(f"NLCD dataset {nlcd_path} is not readable.")
-
-    # Verify CropScape Cropland Data Layer (CDL) dataset
-    cdl_path = os.path.join(data_path, DATA_BASENAMES['cdl'])
-    if not os.path.exists(cdl_path):
-        data_ok = False
-        errors.append(f"CropScape Cropland Data Layer dataset {cdl_path} does not exist.")
-    elif not os.access(cdl_path, os.R_OK):
-        data_ok = False
-        errors.append(f"CropScape Cropland Data Layer dataset {cdl_path} is not readable.")
-
-    paths = {'wbd': wbd_path,
-             'flowline': flowline_path,
-             'nlcd': nlcd_path,
-             'cdl': cdl_path}
-
-    return data_ok, {'errors': errors, 'paths': paths}
-
-
-def _verify_outpath(out_path: str, out_name: str, overwrite=False) -> (bool, dict):
-    errors = []
-    success = True
-
-    if not os.path.exists(out_path) or not os.path.isdir(out_path) or not os.access(out_path, os.W_OK):
-        success = False
-        errors.append(f"Output path {out_path} must be an existing writable directory, but is not.")
-
-    out_file_path = os.path.join(out_path, out_name)
-    if not overwrite and os.path.exists(out_file_path):
-        success = False
-        errors.append(f"Output file {out_file_path} exists.")
-
-    paths = {'out_file_path': out_file_path}
-
-    return success, {'errors': errors, 'paths': paths}
-
-
-def _verify_input(huc_path: str) -> (bool, dict):
-    errors = []
-    success = True
-
-    if not os.path.exists(huc_path) or not os.path.isfile(huc_path) or not os.access(huc_path, os.R_OK):
-        success = False
-        errors.append(f"HUC12 input file {huc_path} must be an existing readable file, but is not.")
-
-    return success, {'errors': errors}
 
 
 def _read_huc12_id(huc_path: str) -> set:
@@ -132,19 +51,19 @@ def main():
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
 
-    success, data_result = _verify_data(args.datapath)
+    success, data_result = verify_raw_data(args.datapath)
     if not success:
         for e in data_result['errors']:
             print(e)
         sys.exit("Invalid source data, exiting. Try running 'download-data.sh'.")
 
-    success, out_result = _verify_outpath(args.outpath, args.outname, args.overwrite)
+    success, out_result = verify_outpath(args.outpath, args.outname, args.overwrite)
     if not success:
         for e in out_result['errors']:
             print(e)
         sys.exit("Output path or name errors, exiting.")
 
-    success, input_result = _verify_input(args.huc_path)
+    success, input_result = verify_input(args.huc_path)
     if not success:
         for e in input_result['errors']:
             print(e)

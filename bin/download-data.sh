@@ -3,12 +3,16 @@
 wget https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV21_NationalData_WBDSnapshot_Shapefile_08.7z \
   https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z \
   https://s3-us-west-2.amazonaws.com/mrlc/NLCD_2016_Land_Cover_L48_20190424.zip \
+  https://prd-tnm.s3.amazonaws.com/StagedProducts/GovtUnit/National/GDB/GovernmentUnits_National_GDB.zip \
   ftp://ftp.nass.usda.gov/download/res/2019_30m_cdls.zip \
   && 7z x NHDPlusV21_NationalData_WBDSnapshot_Shapefile_08.7z \
   && 7z x NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z
 
 # Convert Flowlines to SQLite format for later querying
 ogr2ogr -f "SQLite" NHDFlowline_Network.sqlite NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb NHDFlowline_Network
+
+# Extract county boundaries from National Map/Census data
+ogr2ogr -f "SQLite" TIGER_2013_2017_counties.sqlite /vsizip/GovernmentUnits_National_GDB.zip GU_CountyOrEquivalent
 
 # Reproject NLCD data to WGS84
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/NLCD_2016_Land_Cover_L48_20190424.zip/NLCD_2016_Land_Cover_L48_20190424.img NLCD_2016_Land_Cover_L48_20190424-WGS84.tif
@@ -23,4 +27,6 @@ rm NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z NHDPlusV21_Nationa
 rm -rf NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb \
   NHDPlusNationalData/NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.txt \
   NHDPlusNationalData/NHDPlusV21_NationalData_WBDSnapshot_FileGDB_08.txt \
-  NLCD_2016_Land_Cover_L48_20190424.zip
+  GovernmentUnits_National_GDB.zip \
+  NLCD_2016_Land_Cover_L48_20190424.zip \
+  2019_30m_cdls.zip
