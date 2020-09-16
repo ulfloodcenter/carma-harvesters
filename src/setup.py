@@ -25,5 +25,6 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'carma-huc12-extract=carma_harvesters.cmd.extract_huc12_definitions:main',
+            'carma-county-extract=carma_harvesters.cmd.extract_county_definitions:main',
     ]},
 )
