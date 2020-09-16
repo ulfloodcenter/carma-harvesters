@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  carma:
+    build: .
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    volumes:
+      - ./src:/tmp/code
+      - ./data:/tmp/data
