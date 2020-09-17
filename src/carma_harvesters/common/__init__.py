@@ -50,8 +50,18 @@ def verify_raw_data(data_path: str) -> (bool, dict):
         data_ok = False
         errors.append(f"CropScape Cropland Data Layer dataset {cdl_path} is not readable.")
 
+    # Verify National Map/TIGER counties dataset
+    counties_path = os.path.join(data_path, DATA_BASENAMES['counties'])
+    if not os.path.exists(counties_path):
+        data_ok = False
+        errors.append(f"Counties dataset {counties_path} does not exist.")
+    elif not os.access(counties_path, os.R_OK):
+        data_ok = False
+        errors.append(f"Counties dataset {counties_path} is not readable.")
+
     paths = {'wbd': wbd_path,
              'flowline': flowline_path,
+             'counties': counties_path,
              'nlcd': nlcd_path,
              'cdl': cdl_path}
 

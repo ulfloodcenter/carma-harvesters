@@ -96,7 +96,10 @@ def main():
         carma_counties = []
         # First, entire states
         for state in fips['state']:
-            pass
+            tmp_state_counties_geom = os.path.join(temp_out, 'tmp_state_counties.geojson')
+            where_clause = f"\"state_fipscode='{state}'\""
+            run_ogr2ogr('-f', 'GeoJSON', '-t_srs', 'EPSG:4326', tmp_state_counties_geom, data_result['paths']['counties'],
+                        'gu_countyorequivalent', '-where', where_clause)
 
     except Exception as e:
         print(traceback.format_exc())
