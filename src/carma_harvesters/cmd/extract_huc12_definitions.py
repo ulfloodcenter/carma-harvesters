@@ -137,7 +137,7 @@ def main():
             h12['developedArea'] = h12['area'] * developed_proportion
 
             # Add geometry last so that other properties appear first
-            h12['geometry'] = f
+            h12['geometry'] = f['geometry']
 
             carma_huc12s.append(h12)
 
