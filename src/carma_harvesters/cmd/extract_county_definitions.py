@@ -94,13 +94,46 @@ def main():
         logger.debug(f"FIPS to extract: {fips}")
 
         carma_counties = []
-        # First, entire states
+
+        county_geojson = []
+        # Export counties as GeoJSON: 1st entire states
         for state in fips['state']:
-            tmp_state_counties_geom = os.path.join(temp_out, 'tmp_state_counties.geojson')
+            tmp_geojson = os.path.join(temp_out, f"tmp_counties_{state}.geojson")
+            county_geojson.append(tmp_geojson)
             where_clause = f"\"state_fipscode='{state}'\""
-            run_ogr2ogr('-f', 'GeoJSON', '-t_srs', 'EPSG:4326', tmp_state_counties_geom, data_result['paths']['counties'],
+            run_ogr2ogr('-f', 'GeoJSON', '-t_srs', 'EPSG:4326', tmp_geojson, data_result['paths']['counties'],
                         'gu_countyorequivalent', '-where', where_clause)
 
+        # Export counties as GeoJSON: 2nd individual counties
+        for county in fips['state_county']:
+            tmp_geojson = os.path.join(temp_out, f"tmp_county_{county}.geojson")
+            county_geojson.append(tmp_geojson)
+            where_clause = f"\"stco_fipscode='{county}'\""
+            run_ogr2ogr('-f', 'GeoJSON', '-t_srs', 'EPSG:4326', tmp_geojson,
+                        data_result['paths']['counties'],
+                        'gu_countyorequivalent', '-where', where_clause)
+
+        # Read county attributes and geometries write to CARMA format
+        for geojson in county_geojson:
+            with open(geojson) as f:
+                feat_coll = json.load(f)
+            features = feat_coll['features']
+            for f in features:
+                c = OrderedDict()
+                logger.debug(f"County ID from GeoJSON {f['properties']['stco_fipscode']}")
+                c['id'] = f['properties']['stco_fipscode']
+                c['state'] = f['properties']['state_name']
+                c['county'] = f['properties']['county_name']
+                c['area'] = f['properties']['areasqkm']
+                c['population'] = f['properties']['population']
+                c['geometry'] = f['geometry']
+
+                carma_counties.append(c)
+
+        # Save CARMA county definitions
+        carma_definition = {'Counties': carma_counties}
+        with open(out_result['paths']['out_file_path'], 'w') as f:
+            json.dump(carma_definition, f)
     except Exception as e:
         print(traceback.format_exc())
         sys.exit(e)
