@@ -125,6 +125,7 @@ def main():
                 c['state'] = f['properties']['state_name']
                 c['county'] = f['properties']['county_name']
                 c['area'] = f['properties']['areasqkm']
+                # TODO: Get population from Census web services and put into year-array format
                 c['population'] = f['properties']['population']
                 c['geometry'] = f['geometry']
 
