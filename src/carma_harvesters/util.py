@@ -1,7 +1,9 @@
 import subprocess
 import logging
+import os
 
-PATH_OGR2OGR = '/usr/bin/ogr2ogr'
+
+OGR_PREFIX = os.environ.get('OGR_PREFIX', '/usr/local')
 
 
 logger = logging.getLogger(__name__)
@@ -20,4 +22,4 @@ def run_cmd(cmd: str, *args):
 
 
 def run_ogr2ogr(*args) -> int:
-    return run_cmd(PATH_OGR2OGR, *args)
+    return run_cmd(f"{OGR_PREFIX}/bin/ogr2ogr", *args)

@@ -38,6 +38,16 @@ class CountyPopulation:
         self.year = year
         self.population = int(population)
 
+    def __repr__(self) -> str:
+        return ("CountyPopulation {\n"
+                f"\tname: {self.name},\n"
+                f"\tstate_fips: {self.state_fips},\n"
+                f"\tcounty_fips: {self.county_fips},\n"
+                f"\tlast_update: {self.last_update},\n"
+                f"\tyear: {self.year},\n"
+                f"\tpopulation: {self.population}\n"
+                "}\n")
+
 
 def _deserialize_data_pep_old(year:int, d:list) -> CountyPopulation:
     return CountyPopulation(name=d[0],
