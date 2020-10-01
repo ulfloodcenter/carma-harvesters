@@ -56,3 +56,8 @@ one per line, e.g.:
 
 > A two-digit FIPS indicates that all counties for the entire state should be extracted.
 > A five-digit FIPS indicates that a single county should be extracted.
+
+## Census data
+
+* API documentation: https://api.census.gov/data.html
+* Get API key here: https://api.census.gov/data/key_signup.html
