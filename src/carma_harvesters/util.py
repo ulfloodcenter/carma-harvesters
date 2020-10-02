@@ -3,7 +3,7 @@ import logging
 import os
 
 
-OGR_PREFIX = os.environ.get('OGR_PREFIX', '/usr/bin')
+OGR_PREFIX = os.environ.get('OGR_PREFIX', '/usr')
 
 
 logger = logging.getLogger(__name__)

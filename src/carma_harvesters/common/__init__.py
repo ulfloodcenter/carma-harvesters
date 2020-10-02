@@ -4,15 +4,40 @@ import logging
 DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
                   'flowline': 'NHDFlowline_Network.sqlite',
                   'counties': 'TIGER_2013_2017_counties.sqlite',
-                  'nlcd': 'NLCD_2016_Land_Cover_L48_20190424-WGS84.tif',
-                  'cdl': '2019_30m_cdls.tif'}
+                  'nlcd': {
+                      2016: 'NLCD_2016_Land_Cover_L48_20190424-WGS84.tif'
+                    },
+                  'cdl': {
+                      2019: '2019_30m_cdls.tif'
+                    }
+                  }
+DEFAULT_NLCD_YEAR = 2016
+DEFAULT_CDL_YEAR = 2019
+
 
 logger = logging.getLogger(__name__)
 
 
-def verify_raw_data(data_path: str) -> (bool, dict):
+def verify_raw_data(data_path: str, year=None) -> (bool, dict):
     errors = []
     data_ok = True
+
+    if year is None:
+        nlcd_year = DEFAULT_NLCD_YEAR
+        cdl_year = DEFAULT_CDL_YEAR
+    else:
+        nlcd_year = year
+        cdl_year = year
+
+    if nlcd_year not in DATA_BASENAMES['nlcd']:
+        data_ok = False
+        errors.append(f"No NLCD data for year {nlcd_year}.")
+        return data_ok, {'errors': errors, 'paths': {}}
+
+    if cdl_year not in DATA_BASENAMES['cdl']:
+        data_ok = False
+        errors.append(f"No CropScape Cropland Data Layer data for year {cdl_year}.")
+        return data_ok, {'errors': errors, 'paths': {}}
 
     # Verify water boundary dataset
     wbd_path = os.path.join(data_path, DATA_BASENAMES['wbd'])
@@ -33,7 +58,7 @@ def verify_raw_data(data_path: str) -> (bool, dict):
         errors.append(f"NHD Flowline dataset {flowline_path} is not readable.")
 
     # Verify NLCD dataset
-    nlcd_path = os.path.join(data_path, DATA_BASENAMES['nlcd'])
+    nlcd_path = os.path.join(data_path, DATA_BASENAMES['nlcd'][nlcd_year])
     if not os.path.exists(nlcd_path):
         data_ok = False
         errors.append(f"NLCD dataset {nlcd_path} does not exist.")
@@ -42,7 +67,7 @@ def verify_raw_data(data_path: str) -> (bool, dict):
         errors.append(f"NLCD dataset {nlcd_path} is not readable.")
 
     # Verify CropScape Cropland Data Layer (CDL) dataset
-    cdl_path = os.path.join(data_path, DATA_BASENAMES['cdl'])
+    cdl_path = os.path.join(data_path, DATA_BASENAMES['cdl'][cdl_year])
     if not os.path.exists(cdl_path):
         data_ok = False
         errors.append(f"CropScape Cropland Data Layer dataset {cdl_path} does not exist.")
@@ -62,8 +87,8 @@ def verify_raw_data(data_path: str) -> (bool, dict):
     paths = {'wbd': wbd_path,
              'flowline': flowline_path,
              'counties': counties_path,
-             'nlcd': nlcd_path,
-             'cdl': cdl_path}
+             'nlcd': (nlcd_year, nlcd_path),
+             'cdl': (cdl_year, cdl_path)}
 
     return data_ok, {'errors': errors, 'paths': paths}
 

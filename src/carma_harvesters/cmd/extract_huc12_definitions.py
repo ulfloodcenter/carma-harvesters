@@ -120,21 +120,29 @@ def main():
             h12['meanAnnualFlow'] = mean_annual_flow
 
             # Compute zonal stats for crop cover
-            total_crop_area, crop_areas = calculate_huc12_crop_area(f, data_result['paths']['cdl'], h12['area'])
+            cdl_year, cdl_path = data_result['paths']['cdl']
+            total_crop_area, crop_areas = calculate_huc12_crop_area(f, cdl_path, h12['area'])
             logger.debug(f"CDL total crop area: {total_crop_area}")
             logger.debug(f"CDL individual crop areas: {crop_areas}")
-            h12['cropArea'] = total_crop_area
-            h12['cropAreaDetail'] = crop_areas
+            h12['crops'] = [OrderedDict([
+                ('year', cdl_year),
+                ('cropArea', total_crop_area),
+                ('cropAreaDetail', crop_areas)
+            ])]
 
             # Compute zonal stats for landcover
-            stats = rasterstats.zonal_stats(f, data_result['paths']['nlcd'],
+            nlcd_year, nlcd_path = data_result['paths']['nlcd']
+            stats = rasterstats.zonal_stats(f, nlcd_path,
                                             categorical=True)[0]
             logger.debug(f"NLCD zonal stats: {stats}")
             total_nlcd_cells = sum(stats.values())
             # Should this also include NLCD medium-intensity?
             developed_nlcd_cells = stats.get(NLCD_HIGHLY_DEVELOPED_DN, 0.0)
             developed_proportion = developed_nlcd_cells / total_nlcd_cells
-            h12['developedArea'] = h12['area'] * developed_proportion
+            h12['developedArea'] = [OrderedDict([
+                ('year', nlcd_year),
+                ('area', h12['area'] * developed_proportion)
+            ])]
 
             # Add geometry last so that other properties appear first
             h12['geometry'] = f['geometry']
