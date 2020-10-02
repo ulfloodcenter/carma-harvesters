@@ -50,6 +50,35 @@ def _parse_county_fips(input_path: str) -> dict:
     return fips
 
 
+def _query_population_by_county(census_api_key, population_year, fips) -> dict:
+    county_pop = []
+    # First query entire states
+    states = ','.join(s for s in fips['state'])
+    county_pop = county_pop + get_county_population(census_api_key, population_year, states)
+    # Next query individual counties.
+    counties_by_state = {}
+    for st_co in fips['state_county']:
+        st = st_co[:2]
+        co = st_co[2:]
+        if st in counties_by_state:
+            counties_by_state[st].append(co)
+        else:
+            counties_by_state[st] = [co]
+    for st in counties_by_state:
+        counties = ','.join(c for c in counties_by_state[st])
+        county_pop = county_pop + get_county_population(census_api_key, population_year, st, counties)
+    # Collate into dict with keys $state_fips+$county_fips
+    pop_by_county = {}
+    for co_pop in county_pop:
+        fq_id = co_pop.state_fips + co_pop.county_fips
+        if fq_id in pop_by_county:
+            pop_by_county[fq_id].append(co_pop)
+        else:
+            pop_by_county[fq_id] = [co_pop]
+
+    return pop_by_county
+
+
 def main():
     parser = argparse.ArgumentParser(description=('Extract county definitions in CARMA format from TIGER/Census\n'
                                                   'datasets. Note: If your OGR installation is not in /usr/local, '
@@ -143,25 +172,16 @@ def main():
                 carma_counties.append(c)
 
         # Query Census web service
-        county_pop = []
-        # First query entire states
-        states = ','.join(s for s in fips['state'])
-        county_pop = county_pop + get_county_population(args.census_api_key, args.population_year, states)
-        logger.debug(f"County population for states: {county_pop}")
-        # Next query individual counties.
-        counties_by_state = {}
-        for st_co in fips['state_county']:
-            st = st_co[:2]
-            co = st_co[2:]
-            if st in counties_by_state:
-                counties_by_state[st].append(co)
-            else:
-                counties_by_state[st] = [co]
-        logger.debug(f"County queries by state: {counties_by_state}")
-        for st in counties_by_state:
-            counties = ','.join(c for c in counties_by_state[st])
-            county_pop = county_pop + get_county_population(args.census_api_key, args.population_year, st, counties)
-        logger.debug(f"County population for states and counties: {county_pop}")
+        pop_by_county = _query_population_by_county(args.census_api_key, args.population_year, fips)
+        logger.debug(f"Population by county: {pop_by_county}")
+
+        # Add population data to county definitions
+        for c in carma_counties:
+            pops_for_county = pop_by_county[c['id']]
+            for p in pops_for_county:
+                pop_entry = {'year': p.year,
+                             'count': p.population}
+                c['population'].append(pop_entry)
 
         # Save CARMA county definitions
         carma_definition = {'Counties': carma_counties}
