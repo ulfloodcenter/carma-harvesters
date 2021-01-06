@@ -39,7 +39,7 @@ output will be stored in a directory call "$OUT_PATH", the name of the CARMA fil
 
 ### Extract counties in CARMA format (after TIGER data have been downloaded)
 ```
-carma-county-extract -d $DATA_PATH -o $OUT_PATH -n carma-counties-2020-08-04.json -i $DATA_PATH/mycounties.txt
+carma-county-extract -c $CENSUS_API_KEY -d $DATA_PATH -o $OUT_PATH -n carma-counties-2020-08-04.json -i $DATA_PATH/mycounties.txt
 ```
 
 > Note: use `-v` for verbose/debug output.

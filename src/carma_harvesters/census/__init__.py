@@ -87,7 +87,12 @@ def get_county_population(api_key, year, state_fips, county_fips=None) -> List[C
     r = requests.get(url)
     if r.status_code != 200:
         raise Exception(f"Unable to read population data from Census API {url}, status was: {r.status_code}")
-    response_data = r.json()
+    try:
+        response_data = r.json()
+    except Exception as e:
+        logger.error(f"Error parson JSON for response body: {r.text}")
+        raise Exception(f"Unable to read population data from Census API {url}, JSON parse error.")
+
     if len(response_data) < 2:
         logger.warning(f"Census data from {url} did not return data, response was {r.text}.")
         return None
