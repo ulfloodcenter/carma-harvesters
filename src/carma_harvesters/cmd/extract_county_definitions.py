@@ -11,7 +11,8 @@ from collections import OrderedDict
 
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
-from ..census import get_county_population, POPULATION_URL_TEMPLATES
+from .. census import get_county_population, POPULATION_URL_TEMPLATES
+from .. geoconnex.census import County
 
 
 ST_PATT = re.compile('^\s*([0-9]{2}),*\s*$')
@@ -158,15 +159,16 @@ def main():
             features = feat_coll['features']
             for f in features:
                 c = OrderedDict()
-                logger.debug(f"County ID from GeoJSON {f['properties']['stco_fipscode']}")
-                c['id'] = f['properties']['stco_fipscode']
+                short_id = f['properties']['stco_fipscode']
+                logger.debug(f"County ID from GeoJSON {short_id}")
+                c['id'] = County.generate_fq_id(short_id)
                 c['state'] = f['properties']['state_name']
                 c['county'] = f['properties']['county_name']
                 c['area'] = f['properties']['areasqkm']
                 # Get population from Census web service so just store an empty array right now
                 c['population'] = []
                 # Record county ID so that we can later query Census web service
-                county_ids.append(c['id'][2:])
+                county_ids.append(short_id[2:])
                 c['geometry'] = f['geometry']
 
                 carma_counties.append(c)
@@ -177,7 +179,7 @@ def main():
 
         # Add population data to county definitions
         for c in carma_counties:
-            pops_for_county = pop_by_county[c['id']]
+            pops_for_county = pop_by_county[short_id]
             for p in pops_for_county:
                 pop_entry = {'year': p.year,
                              'count': p.population}

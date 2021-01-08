@@ -15,6 +15,7 @@ from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order
 from .. crops.cropscape import calculate_huc12_crop_area
+from .. geoconnex.usgs import HydrologicUnit
 
 
 HUC12_PATT = re.compile('^\s*([0-9]{12}),*\s*$')
@@ -112,8 +113,9 @@ def main():
                 raise Exception("More than one feature encountered for HUC12 {id} when only one was expected.")
             f = features[0]
             h12 = OrderedDict()
-            logger.debug(f"HUC12 ID from GeoJSON {f['properties']['HUC_12']}")
-            h12['id'] = f['properties']['HUC_12']
+            short_id = f['properties']['HUC_12']
+            logger.debug(f"HUC12 ID from GeoJSON {short_id}")
+            h12['id'] = HydrologicUnit.generate_fq_id(short_id)
             h12['description'] = f['properties']['HU_12_NAME']
             h12['area'] = f['properties']['AreaHUC12']
             h12['maxStreamOrder'] = max_stream_order
