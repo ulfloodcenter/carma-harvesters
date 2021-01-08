@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 import rasterstats
 
-from .. common import verify_raw_data, verify_input, verify_outpath
+from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order
 from .. crops.cropscape import calculate_huc12_crop_area
@@ -151,10 +151,9 @@ def main():
 
         # Save CARMA HUC12 definitions
         carma_definition = {'HUC12Watersheds': carma_huc12s}
-        with open(out_result['paths']['out_file_path'], 'w') as f:
-            json.dump(carma_definition, f)
+        output_json(out_result['paths']['out_file_path'], temp_out, carma_definition, args.overwrite)
     except Exception as e:
-        print(traceback.format_exc())
+        logger.error(traceback.format_exc())
         sys.exit(e)
     finally:
         shutil.rmtree(temp_out)

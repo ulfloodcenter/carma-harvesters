@@ -9,7 +9,7 @@ import traceback
 import json
 from collections import OrderedDict
 
-from .. common import verify_raw_data, verify_input, verify_outpath
+from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from ..census import get_county_population, POPULATION_URL_TEMPLATES
 
@@ -185,10 +185,9 @@ def main():
 
         # Save CARMA county definitions
         carma_definition = {'Counties': carma_counties}
-        with open(out_result['paths']['out_file_path'], 'w') as f:
-            json.dump(carma_definition, f)
+        output_json(out_result['paths']['out_file_path'], temp_out, carma_definition, args.overwrite)
     except Exception as e:
-        print(traceback.format_exc())
+        logger.error(traceback.format_exc())
         sys.exit(e)
     finally:
         shutil.rmtree(temp_out)

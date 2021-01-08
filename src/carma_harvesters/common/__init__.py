@@ -1,5 +1,9 @@
 import os
 import logging
+import json
+import tempfile
+import shutil
+
 
 DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
                   'flowline': 'NHDFlowline_Network.sqlite',
@@ -102,10 +106,6 @@ def verify_outpath(out_path: str, out_name: str, overwrite=False) -> (bool, dict
         errors.append(f"Output path {out_path} must be an existing writable directory, but is not.")
 
     out_file_path = os.path.join(out_path, out_name)
-    if not overwrite and os.path.exists(out_file_path):
-        success = False
-        errors.append(f"Output file {out_file_path} exists.")
-
     paths = {'out_file_path': out_file_path}
 
     return success, {'errors': errors, 'paths': paths}
@@ -120,3 +120,36 @@ def verify_input(input_path: str) -> (bool, dict):
         errors.append(f"Input file {input_path} must be an existing readable file, but is not.")
 
     return success, {'errors': errors}
+
+
+def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bool = False):
+    if overwrite:
+        # Just write new_data as JSON, overwriting exsting file
+        with open(out_file_path, 'w') as f:
+            json.dump(new_data, f)
+    else:
+        # Attempt to merge new_data with JSON already in file
+        # First, read in existing file contents (which should be JSON)
+        existing_data = {}
+        try:
+            with open(out_file_path, 'r') as f:
+                existing_data = json.load(f)
+        except FileNotFoundError:
+            # File does not exist, but overwrite was specified. Ignore. The file will
+            # be created below
+            pass
+        except json.JSONDecodeError:
+            raise Exception(f"Expected file {out_file_path} to be valid JSON, but it is not.")
+
+        # Second, combine new_data with existing data, overwriting extant keys
+        existing_data.update(new_data)
+
+        # Next, output combined output to temporary file
+        f = tempfile.NamedTemporaryFile(dir=temp_out, mode='w', delete=False)
+        tmp_out_path = f.name
+        json.dump(existing_data, f)
+        f.close()
+
+        # Finally, overwrite existing file with updated file, delete temporary file
+        shutil.copy(tmp_out_path, out_file_path)
+        os.unlink(tmp_out_path)
