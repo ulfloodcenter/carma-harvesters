@@ -1,4 +1,6 @@
+import tempfile
 
+import requests
 
 VALID_YEARS = [1985, 1990, 1995, 2000, 2005, 2010, 2015]
 
@@ -75,9 +77,19 @@ def download_water_use_data(year: int, state_fips: str, county_fips: str, out_pa
 
     state_abbrev = STATE_FIPS_TO_ABBREV[state_fips]
 
-    # TODO: Create file to store data in
+    # Create file to store data in
+    f = tempfile.NamedTemporaryFile(dir=out_path, prefix=f"nwis_water_use_data_{state_abbrev}", suffix='csv',
+                                    delete=False)
+    out_file_name = f.name
 
-    # TODO: Query NWIS water use data using requests
+    # Query NWIS water use data using requests
     url = URL_PROTO.format(state_abbrev=state_abbrev, year=year, county_fips=county_fips)
+    r = requests.get(url, stream=True)
+    if r.status_code != 200:
+        raise Exception(f"Error: Response code {r.status_code} when downloading water use data from {url}.")
+    for chunk in r.iter_content(chunk_size=4096):
+        f.write(chunk)
+    f.close()
 
-    # TODO: Return absolute path of file containing downloaded data
+    # Return absolute path of file containing downloaded data
+    return out_file_name

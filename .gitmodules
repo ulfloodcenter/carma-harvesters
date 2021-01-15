@@ -1,0 +1,3 @@
+[submodule "src/carma-schema"]
+	path = src/carma-schema
+	url = git@bitbucket.org:watershedfloodcenter/carma-schema.git
