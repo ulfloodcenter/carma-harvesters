@@ -142,5 +142,8 @@ venv*
 *~
 .idea
 
+# Platform-specific
+.DS_Store
+
 # Data
 data/*
