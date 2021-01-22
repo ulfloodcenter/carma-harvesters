@@ -3,6 +3,9 @@ from typing import Set
 
 import requests
 
+import pandas as pd
+
+
 VALID_YEARS = [1985, 1990, 1995, 2000, 2005, 2010, 2015]
 
 STATE_FIPS_TO_ABBREV = {
@@ -96,3 +99,11 @@ def download_water_use_data(year: int, state_fips: str, county_fips: Set[str], o
 
     # Return absolute path of file containing downloaded data
     return out_file_name
+
+
+def read_water_use_data(input_csv_path: str) -> pd.DataFrame:
+    df = pd.read_csv(input_csv_path, sep='\t', comment='#', skiprows=1)
+    # Remove first row, which contains field widths for some reason even though
+    # the file is tab delimited
+    df = df.drop(0)
+    return df
