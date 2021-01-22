@@ -3,11 +3,15 @@ import logging
 import sys
 import pkg_resources
 import os
+import tempfile
+import traceback
+import shutil
 
 from carma_schema import validate, get_county_ids
 
 from .. common import verify_input
 from .. geoconnex.census import County
+from .. usgs.nwis_water_use import download_water_use_data
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +52,42 @@ def main():
 
     logger.debug(f"Input {abs_carma_inpath} validated successfully against schema {schema_path}")
 
-    document = result['document']
-    fq_county_ids = get_county_ids(document)
-    short_county_ids = [County.parse_fq_id(fq_id) for fq_id in fq_county_ids]
-    logger.debug(f"County IDs to query {short_county_ids}")
+    try:
+        # Make temporary working directory
+        temp_out = tempfile.mkdtemp()
+        logger.debug(f"Temp dir: {temp_out}")
+
+        document = result['document']
+        fq_county_ids = get_county_ids(document)
+        short_county_ids = [County.parse_fq_id(fq_id) for fq_id in fq_county_ids]
+        logger.debug(f"County IDs to query...")
+        for c in short_county_ids:
+            logger.debug(f"\t{str(short_county_ids)}")
+
+        # Collate county IDs by state
+        county_ids_by_state_fips = {}
+        for id in short_county_ids:
+            county_list = None
+            if id.state_fips not in county_ids_by_state_fips:
+                county_list = set()
+                county_ids_by_state_fips[id.state_fips] = county_list
+            else:
+                county_list = county_ids_by_state_fips[id.state_fips]
+            county_list.add(id.county_fips)
+
+        logger.debug(f"Counties to query by state:")
+        for k in county_ids_by_state_fips.keys():
+            logger.debug(f"State FIPS: {k}")
+            logger.debug(f"\t{county_ids_by_state_fips[k]}")
+            logger.debug("\tDownloading data NWIS water use data...")
+            water_use_outfile_for_county = download_water_use_data(year=args.year,
+                                                                   state_fips=k,
+                                                                   county_fips=county_ids_by_state_fips[k],
+                                                                   out_path=temp_out)
+            logger.debug(f"\tOutput saved to {water_use_outfile_for_county}")
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        sys.exit(e)
+    finally:
+        #shutil.rmtree(temp_out)
+        pass

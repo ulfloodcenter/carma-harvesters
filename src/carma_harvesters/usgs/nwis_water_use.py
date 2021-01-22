@@ -1,4 +1,5 @@
 import tempfile
+from typing import Set
 
 import requests
 
@@ -61,12 +62,12 @@ STATE_FIPS_TO_ABBREV = {
 URL_PROTO = "https://waterdata.usgs.gov/{state_abbrev}/nwis/water_use?format=rdb&rdb_compression=file&wu_area=County&wu_year={year}&wu_county={county_fips}"
 
 
-def download_water_use_data(year: int, state_fips: str, county_fips: str, out_path: str) -> str:
+def download_water_use_data(year: int, state_fips: str, county_fips: Set[str], out_path: str) -> str:
     """
     Download USGS NWIS water use data for a single county in a single state for a single year.
     :param year: Year of data to download. Must be one of VALID_YEARS.
     :param state_fips: FIPS code of state to download data for. Must a key in STATE_FIPS_TO_ABBREV.
-    :param county_fips: FIPS code of the county to download data for.
+    :param county_fips: Set of one or more FIPS codes of the counties to download data for.
     :param out_path: Path in which downloaded data file should be stored.
     :return: Absolute path of the file containing the downloaded data.
     """
@@ -77,13 +78,15 @@ def download_water_use_data(year: int, state_fips: str, county_fips: str, out_pa
 
     state_abbrev = STATE_FIPS_TO_ABBREV[state_fips]
 
+    county_fips_arg = ','.join(county_fips)
+
     # Create file to store data in
-    f = tempfile.NamedTemporaryFile(dir=out_path, prefix=f"nwis_water_use_data_{state_abbrev}", suffix='csv',
+    f = tempfile.NamedTemporaryFile(dir=out_path, prefix=f"nwis_water_use_data_{state_abbrev}", suffix='.csv',
                                     delete=False)
     out_file_name = f.name
 
     # Query NWIS water use data using requests
-    url = URL_PROTO.format(state_abbrev=state_abbrev, year=year, county_fips=county_fips)
+    url = URL_PROTO.format(state_abbrev=state_abbrev, year=year, county_fips=county_fips_arg)
     r = requests.get(url, stream=True)
     if r.status_code != 200:
         raise Exception(f"Error: Response code {r.status_code} when downloading water use data from {url}.")

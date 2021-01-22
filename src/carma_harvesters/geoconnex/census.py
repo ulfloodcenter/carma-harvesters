@@ -3,7 +3,17 @@ from urllib.parse import urlparse
 
 from carma_harvesters.geoconnex import Entity
 
-ShortIDComponents = collections.namedtuple('ShortIDComponents', ['state_fips', 'county_fips'])
+
+class ShortIDComponents:
+    def __init__(self, state_fips, county_fips):
+        self.state_fips = state_fips
+        self.county_fips = county_fips
+
+    def __str__(self):
+        return f"{self.state_fips}{self.county_fips}"
+
+    def __repr__(self):
+        return f"ShortIDComponents {{ state_fips: {self.state_fips}, county_fips: {self.county_fips} }}"
 
 
 class County(Entity):
