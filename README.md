@@ -59,10 +59,18 @@ one per line, e.g.:
 
 ### Download water use data from NWIS
 ```
-carma-download-nwis-wateruse -c carma-out.json -y 2015
+carma-download-nwis-wateruse -c carma-out.json -y 2010
 ```
 
 > Note: use `-v` for verbose/debug output.
+
+To download water use data for another year:
+```
+carma-download-nwis-wateruse -c carma-out.json -y 2015
+```
+
+By default, the new year's data will be added to any existing water use data. To overwrite
+use `--overwrite`.
 
 ## Census data
 
