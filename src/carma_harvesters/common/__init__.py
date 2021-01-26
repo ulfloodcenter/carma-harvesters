@@ -1,8 +1,10 @@
 import os
 import logging
-import json
 import tempfile
 import shutil
+from decimal import Decimal
+
+import simplejson as json
 
 
 DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
@@ -122,11 +124,22 @@ def verify_input(input_path: str) -> (bool, dict):
     return success, {'errors': errors}
 
 
-def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bool = False):
+def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bool = False) -> bool:
+    success = True
     if overwrite:
-        # Just write new_data as JSON, overwriting exsting file
-        with open(out_file_path, 'w') as f:
-            json.dump(new_data, f)
+        # Output new_data to a temporary file
+        f = tempfile.NamedTemporaryFile(dir=temp_out, mode='w', delete=False)
+        tmp_out_path = f.name
+        try:
+            json.dump(new_data, f, use_decimal=True)
+        except TypeError as e:
+            logger.error(f"Unable to output JSON data to temporary file {tmp_out_path} due to error: {e}")
+            success = False
+        finally:
+            f.close()
+        # Overwrite previous file with new file
+        shutil.copy(tmp_out_path, out_file_path)
+        os.unlink(tmp_out_path)
     else:
         # Attempt to merge new_data with JSON already in file
         # First, read in existing file contents (which should be JSON)
@@ -147,9 +160,15 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
         # Next, output combined output to temporary file
         f = tempfile.NamedTemporaryFile(dir=temp_out, mode='w', delete=False)
         tmp_out_path = f.name
-        json.dump(existing_data, f)
-        f.close()
+        try:
+            json.dump(existing_data, f, use_decimal=True)
+        except TypeError as e:
+            logger.error(f"Unable to output JSON data to temporary file {tmp_out_path} due to error: {e}")
+            success = False
+        finally:
+            f.close()
 
         # Finally, overwrite existing file with updated file, delete temporary file
         shutil.copy(tmp_out_path, out_file_path)
         os.unlink(tmp_out_path)
+    return success

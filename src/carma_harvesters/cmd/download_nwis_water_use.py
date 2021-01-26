@@ -9,9 +9,9 @@ import shutil
 
 from carma_schema import validate, get_county_ids
 
-from .. common import verify_input
+from .. common import verify_input, output_json
 from .. geoconnex.census import County
-from .. usgs.nwis_water_use import download_water_use_data
+from .. usgs.nwis_water_use import download_water_use_data, read_water_use_data, water_use_df_to_carma
 
 
 logger = logging.getLogger(__name__)
@@ -75,16 +75,27 @@ def main():
                 county_list = county_ids_by_state_fips[id.state_fips]
             county_list.add(id.county_fips)
 
+        # Download water use data from NWIS for each state (since each state has a different endpoint)
         logger.debug(f"Counties to query by state:")
+        water_use_objects = []
         for k in county_ids_by_state_fips.keys():
             logger.debug(f"State FIPS: {k}")
-            logger.debug(f"\t{county_ids_by_state_fips[k]}")
-            logger.debug("\tDownloading data NWIS water use data...")
-            water_use_outfile_for_county = download_water_use_data(year=args.year,
-                                                                   state_fips=k,
-                                                                   county_fips=county_ids_by_state_fips[k],
-                                                                   out_path=temp_out)
-            logger.debug(f"\tOutput saved to {water_use_outfile_for_county}")
+            logger.debug(f"{county_ids_by_state_fips[k]}")
+            logger.debug("Downloading data NWIS water use data...")
+            outfile_for_counties, url = download_water_use_data(year=args.year,
+                                                                state_fips=k,
+                                                                county_fips=county_ids_by_state_fips[k],
+                                                                out_path=temp_out)
+            logger.debug(f"Output saved to {outfile_for_counties}")
+            water_use_df = read_water_use_data(outfile_for_counties)
+            water_use_df_to_carma(water_use_df, url, water_use_objects)
+        logger.debug(f"Marshalled {len(water_use_objects)} water use data instances")
+
+        # Save CARMA water use data
+        logger.debug(f"Starting writing WaterUseDatasets to {abs_carma_inpath}...")
+        document['WaterUseDatasets'] = water_use_objects
+        output_json(abs_carma_inpath, temp_out, document, overwrite=True)
+        logger.debug(f"Finished writing WaterUseDatasets to {abs_carma_inpath}.")
     except Exception as e:
         logger.error(traceback.format_exc())
         sys.exit(e)

@@ -1,9 +1,16 @@
 import tempfile
-from typing import Set
+from typing import Set, List
+import decimal
+import logging
 
 import requests
-
 import pandas as pd
+
+from .. geoconnex.census import County
+from . nwis_water_user_constants import CATEGORY_DESCRIPTORS
+
+
+logger = logging.getLogger(__name__)
 
 
 VALID_YEARS = [1985, 1990, 1995, 2000, 2005, 2010, 2015]
@@ -62,17 +69,29 @@ STATE_FIPS_TO_ABBREV = {
     '56': 'wy',
 }
 
+NWIS_TO_CARMA_ATTR = {
+    'sector': 'sector',
+    'entity_type': 'entityType',
+    'source_type': 'sourceType',
+    'source_quality': 'sourceQuality',
+    'description': 'description',
+    'unit': 'unit'
+}
+
+NWIS_EMPTY_VALUE = '-'
+ZERO = decimal.Decimal('0.0')
+
 URL_PROTO = "https://waterdata.usgs.gov/{state_abbrev}/nwis/water_use?format=rdb&rdb_compression=file&wu_area=County&wu_year={year}&wu_county={county_fips}"
 
 
-def download_water_use_data(year: int, state_fips: str, county_fips: Set[str], out_path: str) -> str:
+def download_water_use_data(year: int, state_fips: str, county_fips: Set[str], out_path: str) -> (str, str):
     """
     Download USGS NWIS water use data for a single county in a single state for a single year.
     :param year: Year of data to download. Must be one of VALID_YEARS.
     :param state_fips: FIPS code of state to download data for. Must a key in STATE_FIPS_TO_ABBREV.
     :param county_fips: Set of one or more FIPS codes of the counties to download data for.
     :param out_path: Path in which downloaded data file should be stored.
-    :return: Absolute path of the file containing the downloaded data.
+    :return: Tuple containing: absolute path of the file containing the downloaded data, original URL of data queried.
     """
     if year not in VALID_YEARS:
         raise ValueError(f"Year {year} is not among valid years {VALID_YEARS}")
@@ -98,7 +117,7 @@ def download_water_use_data(year: int, state_fips: str, county_fips: Set[str], o
     f.close()
 
     # Return absolute path of file containing downloaded data
-    return out_file_name
+    return out_file_name, url
 
 
 def read_water_use_data(input_csv_path: str) -> pd.DataFrame:
@@ -107,3 +126,37 @@ def read_water_use_data(input_csv_path: str) -> pd.DataFrame:
     # the file is tab delimited
     df = df.drop(0)
     return df
+
+
+def water_use_df_to_carma(water_use_df: pd.DataFrame, url: str, water_use_objects: List):
+    for i in range(len(water_use_df)):
+        row = water_use_df.iloc[i].to_dict()
+        county_id_short = f"{row['state_cd']}{row['county_cd']}"
+        county_id = County.generate_fq_id(county_id_short)
+        year = int(row['year'])
+        for k, cat_desc in CATEGORY_DESCRIPTORS.items():
+            try:
+                value = row[k]
+                if value == NWIS_EMPTY_VALUE:
+                    value = ZERO
+                else:
+                    try:
+                        value = decimal.Decimal(value)
+                    except decimal.InvalidOperation:
+                        logger.warning(f"Unable to convert value {value} to decimal type, using 0.0.")
+                        value = ZERO
+                datum = {'county': county_id,
+                         NWIS_TO_CARMA_ATTR['entity_type']: cat_desc['entity_type'],
+                         NWIS_TO_CARMA_ATTR['source_type']: cat_desc['source_type'],
+                         NWIS_TO_CARMA_ATTR['source_quality']: cat_desc['source_quality'],
+                         NWIS_TO_CARMA_ATTR['sector']: cat_desc['sector'],
+                         NWIS_TO_CARMA_ATTR['description']: cat_desc['description'],
+                         'sourceData': url,
+                         'year': year,
+                         'value': value,
+                         NWIS_TO_CARMA_ATTR['unit']: cat_desc['unit']}
+                water_use_objects.append(datum)
+
+            except KeyError:
+                logger.warning(f"Water use variable {k} not found in USGS data, but should be")
+    return water_use_objects
