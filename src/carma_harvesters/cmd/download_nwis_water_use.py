@@ -28,6 +28,7 @@ def main():
                                                       'use data will be written to the the same file.'))
     parser.add_argument('-y', '--year', type=int, default=2015, help='Year for which water use data should be downloaded.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
+    parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
 
     if args.verbose:
@@ -93,7 +94,12 @@ def main():
 
         # Save CARMA water use data
         logger.debug(f"Starting writing WaterUseDatasets to {abs_carma_inpath}...")
-        document['WaterUseDatasets'] = water_use_objects
+        if 'WaterUseDatasets' not in document or args.overwrite:
+            document['WaterUseDatasets'] = water_use_objects
+        else:
+            document['WaterUseDatasets'].extend(water_use_objects)
+        # We always pass overwrite=True in to output_json because we collate JSON data
+        # above before outputing.
         output_json(abs_carma_inpath, temp_out, document, overwrite=True)
         logger.debug(f"Finished writing WaterUseDatasets to {abs_carma_inpath}.")
     except Exception as e:
