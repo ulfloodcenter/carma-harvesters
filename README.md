@@ -23,7 +23,7 @@ The download and extraction will take a while. Go get some coffee (or maybe lunc
 
 ### Extract HUC12s in CARMA format (after NHDPlusV2 data have been downloaded)
 ```
-carma-huc12-extract -d $DATA_PATH -o $OUT_PATH -n carma-huc12s-2020-08-04.json -i $DATA_PATH/myhucs.txt
+carma-huc12-extract -d $DATA_PATH -o $OUT_PATH -n carma-out.json -i $DATA_PATH/myhucs.txt
 ```
 
 > Note: use `-v` for verbose/debug output.
@@ -39,7 +39,7 @@ output will be stored in a directory call "$OUT_PATH", the name of the CARMA fil
 
 ### Extract counties in CARMA format (after TIGER data have been downloaded)
 ```
-carma-county-extract -c $CENSUS_API_KEY -d $DATA_PATH -o $OUT_PATH -n carma-counties-2020-08-04.json -i $DATA_PATH/mycounties.txt
+carma-county-extract -c $CENSUS_API_KEY -d $DATA_PATH -o $OUT_PATH -n carma-out.json -i $DATA_PATH/mycounties.txt
 ```
 
 > Note: use `-v` for verbose/debug output.
@@ -56,6 +56,13 @@ one per line, e.g.:
 
 > A two-digit FIPS indicates that all counties for the entire state should be extracted.
 > A five-digit FIPS indicates that a single county should be extracted.
+
+### Download water use data from NWIS
+```
+carma-download-nwis-wateruse -c carma-out.json -y 2015
+```
+
+> Note: use `-v` for verbose/debug output.
 
 ## Census data
 
