@@ -55,7 +55,8 @@ def _query_population_by_county(census_api_key, population_year, fips) -> dict:
     county_pop = []
     # First query entire states
     states = ','.join(s for s in fips['state'])
-    county_pop = county_pop + get_county_population(census_api_key, population_year, states)
+    if states != '':
+        county_pop = county_pop + get_county_population(census_api_key, population_year, states)
     # Next query individual counties.
     counties_by_state = {}
     for st_co in fips['state_county']:
