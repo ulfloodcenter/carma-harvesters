@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Tuple, IO
+from typing import Tuple
 
 import rasterstats
 
@@ -152,7 +152,7 @@ def is_crop(dn: int) -> bool:
     return False
 
 
-def calculate_huc12_crop_area(zone_features: IO,
+def calculate_huc12_crop_area(zone_features: dict,
                               cdl_raster_path: str,
                               huc12_area: float) -> Tuple[float, dict]:
     stats = rasterstats.zonal_stats(zone_features,

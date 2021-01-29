@@ -15,6 +15,7 @@ from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order
 from .. crops.cropscape import calculate_huc12_crop_area
+from .. usgs.recharge import calculate_huc12_mean_recharge
 from .. geoconnex.usgs import HydrologicUnit
 
 
@@ -145,6 +146,11 @@ def main():
                 ('year', nlcd_year),
                 ('area', h12['area'] * developed_proportion)
             ])]
+
+            # Compute zonal stats for groundwater recharge
+            recharge_path = data_result['paths']['recharge']
+            recharge = calculate_huc12_mean_recharge(f, recharge_path)
+            h12['recharge'] = recharge
 
             # Add geometry last so that other properties appear first
             h12['geometry'] = f['geometry']

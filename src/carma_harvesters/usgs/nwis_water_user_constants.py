@@ -22,6 +22,8 @@ SECTORS = ["Public Supply",
 
 POPULATION_CATEGORY = 'Total Population total population of area, in thousands'
 
+# TODO: Make descriptors objects instead of dicts so that they can be hashed to
+# determine uniqueness and to support sorting
 CATEGORY_DESCRIPTORS = {
     "Public Supply population served by groundwater, in thousands":
         {

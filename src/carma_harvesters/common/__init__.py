@@ -15,7 +15,8 @@ DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
                     },
                   'cdl': {
                       2019: '2019_30m_cdls.tif'
-                    }
+                    },
+                  'rech48grd': 'rech48grd.tif'
                   }
 DEFAULT_NLCD_YEAR = 2016
 DEFAULT_CDL_YEAR = 2019
@@ -90,11 +91,21 @@ def verify_raw_data(data_path: str, year=None) -> (bool, dict):
         data_ok = False
         errors.append(f"Counties dataset {counties_path} is not readable.")
 
+    # Verify USGS groundwater recharge dataset
+    rech48grd_path = os.path.join(data_path, DATA_BASENAMES['rech48grd'])
+    if not os.path.exists(rech48grd_path):
+        data_ok = False
+        errors.append(f"USGS groundwater recharge dataset {rech48grd_path} does not exist.")
+    elif not os.access(rech48grd_path, os.R_OK):
+        data_ok = False
+        errors.append(f"USGS groundwater recharge dataset {counties_path} is not readable.")
+
     paths = {'wbd': wbd_path,
              'flowline': flowline_path,
              'counties': counties_path,
              'nlcd': (nlcd_year, nlcd_path),
-             'cdl': (cdl_year, cdl_path)}
+             'cdl': (cdl_year, cdl_path),
+             'recharge': rech48grd_path}
 
     return data_ok, {'errors': errors, 'paths': paths}
 
