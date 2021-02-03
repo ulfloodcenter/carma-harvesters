@@ -37,9 +37,8 @@ def _read_huc12_id(huc_path: str) -> set:
 
 def main():
     parser = argparse.ArgumentParser(description='Extract HUC12 definitions in CARMA format from NHDPlus datasets')
-    parser.add_argument('-d', '--datapath', help=('Directory containing the following data files/directories: '
-                                                  'NHDPlusNationalData/NationalWBDSnapshot.gdb, '
-                                                  'NHDFlowline_Network.sqlite, PlusFlow.sqlite'))
+    parser.add_argument('-d', '--datapath', help=('Directory containing data downloaded/extracted from '
+                                                  'bin/download-data.sh.'))
     parser.add_argument('-o', '--outpath', help='Directory where output should be stored.')
     parser.add_argument('-n', '--outname', help=('Name of file, stored in outpath, where CARMA-schema formatted output '
                                                 'should be stored.'))

@@ -10,10 +10,10 @@ wget https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV
   && 7z x NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z
 
 # Convert Flowlines to SQLite format for later querying
-ogr2ogr -f "SQLite" NHDFlowline_Network.sqlite NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb NHDFlowline_Network
+ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -t_srs EPSG:4326 NHDFlowline_Network.spatialite NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb NHDFlowline_Network
 
 # Extract county boundaries from National Map/Census data
-ogr2ogr -f "SQLite" TIGER_2013_2017_counties.sqlite /vsizip/GovernmentUnits_National_GDB.zip GU_CountyOrEquivalent
+ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -t_srs EPSG:4326 TIGER_2013_2017_counties.spatialite /vsizip/GovernmentUnits_National_GDB.zip GU_CountyOrEquivalent
 
 # Reproject NLCD data to WGS84
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/NLCD_2016_Land_Cover_L48_20190424.zip/NLCD_2016_Land_Cover_L48_20190424.img NLCD_2016_Land_Cover_L48_20190424-WGS84.tif

@@ -8,8 +8,8 @@ import simplejson as json
 
 
 DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
-                  'flowline': 'NHDFlowline_Network.sqlite',
-                  'counties': 'TIGER_2013_2017_counties.sqlite',
+                  'flowline': 'NHDFlowline_Network.spatialite',
+                  'counties': 'TIGER_2013_2017_counties.spatialite',
                   'nlcd': {
                       2016: 'NLCD_2016_Land_Cover_L48_20190424-WGS84.tif'
                     },

@@ -13,6 +13,7 @@ from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. census import get_county_population, POPULATION_URL_TEMPLATES
 from .. geoconnex.census import County
+from .. nhd import get_county_stream_characteristics
 
 
 ST_PATT = re.compile('^\s*([0-9]{2}),*\s*$')
@@ -91,7 +92,7 @@ def main():
     parser.add_argument('-n', '--outname', help=('Name of file, stored in outpath, where CARMA-schema formatted output '
                                                 'should be stored.'))
     parser.add_argument('-i', '--county_path', help='Path to file containing one or more state or county FIPS code, one per line.')
-    parser.add_argument('-y', '--population_year', type=int, default=2019, help='Year for which county population should be queried from US Census.')
+    parser.add_argument('-y', '--population_year', type=int, default=2015, help='Year for which county population should be queried from US Census.')
     parser.add_argument('-c', '--census_api_key', help='Census API key obtained from https://api.census.gov/data/key_signup.html')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
@@ -174,19 +175,29 @@ def main():
 
                 carma_counties.append(c)
 
-        # Query Census web service
+        # Query Census web service for population data
         pop_by_county = _query_population_by_county(args.census_api_key, args.population_year, fips)
         logger.debug(f"Population by county: {pop_by_county}")
 
-        # Add population data to county definitions
+        # Do county-by-county processing
         for c in carma_counties:
+            # Add population data to county definitions
             pops_for_county = pop_by_county[short_id]
             for p in pops_for_county:
                 pop_entry = {'year': p.year,
                              'count': p.population}
                 c['population'].append(pop_entry)
 
-        # Save CARMA county definitions
+            # Get stream characteristics
+            logger.debug(f"Getting stream characteristics for county {c['id']}. This may take a while...")
+            max_strm_ord, min_strm_lvl, max_mean_ann_flow = \
+                get_county_stream_characteristics(c['geometry'], data_result['paths']['flowline'])
+            logger.debug(f"Stream characteristics: max_strm_ord: {max_strm_ord}, min_strm_lvl: {min_strm_lvl}, max_mean_ann_flow: {max_mean_ann_flow}")
+            c['maxStreamOrder'] = max_strm_ord
+            c['minStreamLevel'] = min_strm_lvl
+            c['meanAnnualFlow'] = max_mean_ann_flow
+
+            # Save CARMA county definitions
         carma_definition = {'Counties': carma_counties}
         output_json(out_result['paths']['out_file_path'], temp_out, carma_definition, args.overwrite)
     except Exception as e:
