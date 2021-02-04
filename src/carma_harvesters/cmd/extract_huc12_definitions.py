@@ -14,8 +14,9 @@ import rasterstats
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order
-from .. crops.cropscape import calculate_huc12_crop_area
+from .. crops.cropscape import calculate_geography_crop_area
 from .. usgs.recharge import calculate_huc12_mean_recharge
+from .. nlcd import get_percent_highly_developed_land
 from .. geoconnex.usgs import HydrologicUnit
 
 
@@ -123,7 +124,7 @@ def main():
 
             # Compute zonal stats for crop cover
             cdl_year, cdl_path = data_result['paths']['cdl']
-            total_crop_area, crop_areas = calculate_huc12_crop_area(f, cdl_path, h12['area'])
+            total_crop_area, crop_areas = calculate_geography_crop_area(f, cdl_path, h12['area'])
             logger.debug(f"CDL total crop area: {total_crop_area}")
             logger.debug(f"CDL individual crop areas: {crop_areas}")
             h12['crops'] = [OrderedDict([
@@ -134,12 +135,7 @@ def main():
 
             # Compute zonal stats for landcover
             nlcd_year, nlcd_path = data_result['paths']['nlcd']
-            stats = rasterstats.zonal_stats(f, nlcd_path,
-                                            categorical=True)[0]
-            logger.debug(f"NLCD zonal stats: {stats}")
-            total_nlcd_cells = sum(stats.values())
-            # Should this also include NLCD medium-intensity?
-            developed_nlcd_cells = stats.get(NLCD_HIGHLY_DEVELOPED_DN, 0.0)
+            developed_nlcd_cells, total_nlcd_cells = get_percent_highly_developed_land(f, nlcd_path)
             developed_proportion = developed_nlcd_cells / total_nlcd_cells
             h12['developedArea'] = [OrderedDict([
                 ('year', nlcd_year),

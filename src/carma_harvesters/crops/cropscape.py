@@ -152,9 +152,9 @@ def is_crop(dn: int) -> bool:
     return False
 
 
-def calculate_huc12_crop_area(zone_features: dict,
-                              cdl_raster_path: str,
-                              huc12_area: float) -> Tuple[float, dict]:
+def calculate_geography_crop_area(zone_features: dict,
+                                  cdl_raster_path: str,
+                                  geography_area: float) -> Tuple[float, dict]:
     stats = rasterstats.zonal_stats(zone_features,
                                     cdl_raster_path,
                                     categorical=True)[0]
@@ -165,7 +165,7 @@ def calculate_huc12_crop_area(zone_features: dict,
         if is_crop(k):
             crop_pixels += stats[k]
         if k in CDL_RASTER_VALUE_TO_NAME:
-            crop_areas[CDL_RASTER_VALUE_TO_NAME[k]] = (stats[k] / total_pixels) * huc12_area
-    total_crop_area = (crop_pixels / total_pixels) * huc12_area
+            crop_areas[CDL_RASTER_VALUE_TO_NAME[k]] = (stats[k] / total_pixels) * geography_area
+    total_crop_area = (crop_pixels / total_pixels) * geography_area
 
     return total_crop_area, crop_areas

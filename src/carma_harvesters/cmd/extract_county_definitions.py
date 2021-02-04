@@ -12,8 +12,10 @@ from collections import OrderedDict
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. census import get_county_population, POPULATION_URL_TEMPLATES
-from .. geoconnex.census import County
 from .. nhd import get_county_stream_characteristics
+from .. crops.cropscape import calculate_geography_crop_area
+from .. nlcd import get_percent_highly_developed_land
+from .. geoconnex.census import County
 
 
 ST_PATT = re.compile('^\s*([0-9]{2}),*\s*$')
@@ -197,7 +199,27 @@ def main():
             c['minStreamLevel'] = min_strm_lvl
             c['meanAnnualFlow'] = max_mean_ann_flow
 
-            # Save CARMA county definitions
+            # Compute zonal stats for crop cover
+            cdl_year, cdl_path = data_result['paths']['cdl']
+            total_crop_area, crop_areas = calculate_geography_crop_area(c['geometry'], cdl_path, c['area'])
+            logger.debug(f"CDL total crop area: {total_crop_area}")
+            logger.debug(f"CDL individual crop areas: {crop_areas}")
+            c['crops'] = [OrderedDict([
+                ('year', cdl_year),
+                ('cropArea', total_crop_area),
+                ('cropAreaDetail', crop_areas)
+            ])]
+
+            # Compute zonal stats for landcover
+            nlcd_year, nlcd_path = data_result['paths']['nlcd']
+            developed_nlcd_cells, total_nlcd_cells = get_percent_highly_developed_land(c['geometry'], nlcd_path)
+            developed_proportion = developed_nlcd_cells / total_nlcd_cells
+            c['developedArea'] = [OrderedDict([
+                ('year', nlcd_year),
+                ('area', c['area'] * developed_proportion)
+            ])]
+
+        # Save CARMA county definitions
         carma_definition = {'Counties': carma_counties}
         output_json(out_result['paths']['out_file_path'], temp_out, carma_definition, args.overwrite)
     except Exception as e:
