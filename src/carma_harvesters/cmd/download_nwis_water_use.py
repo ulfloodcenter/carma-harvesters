@@ -9,7 +9,7 @@ import shutil
 from carma_schema import get_county_ids
 
 from .. exception import SchemaValidationException
-from .. common import verify_input, output_json, open_existing_carma_document
+from .. common import verify_input, output_json, open_existing_carma_document, write_objects_to_existing_carma_document
 from .. geoconnex.census import County
 from .. usgs.nwis_water_use import download_water_use_data, read_water_use_data, water_use_df_to_carma
 
@@ -84,15 +84,9 @@ def main():
         logger.debug(f"Marshalled {len(water_use_objects)} water use data instances")
 
         # Save CARMA water use data
-        logger.debug(f"Starting writing WaterUseDatasets to {abs_carma_inpath}...")
-        if 'WaterUseDatasets' not in document or args.overwrite:
-            document['WaterUseDatasets'] = water_use_objects
-        else:
-            document['WaterUseDatasets'].extend(water_use_objects)
-        # We always pass overwrite=True in to output_json because we collate JSON data
-        # above before outputting.
-        output_json(abs_carma_inpath, temp_out, document, overwrite=True)
-        logger.debug(f"Finished writing WaterUseDatasets to {abs_carma_inpath}.")
+        write_objects_to_existing_carma_document(water_use_objects, 'WaterUseDatasets',
+                                                 document, abs_carma_inpath,
+                                                 temp_out, args.overwrite)
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
         sys.exit(e)

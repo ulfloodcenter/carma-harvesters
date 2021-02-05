@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from carma_harvesters.geoconnex import Entity
 
 
@@ -11,3 +13,8 @@ class HydrologicUnit(Entity):
         :return: Fully qualified hydrologic unit ID, e.g. https://geoconnex.us/usgs/hydrologic-unit/07070005
         """
         return f"https://geoconnex.us/usgs/hydrologic-unit/{short_id}"
+
+    @classmethod
+    def parse_fq_id(cls, fq_id: str) -> str:
+        short_id = urlparse(fq_id).path.split('/')[-1]
+        return short_id

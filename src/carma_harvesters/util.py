@@ -9,6 +9,18 @@ OGR_PREFIX = os.environ.get('OGR_PREFIX', '/usr')
 logger = logging.getLogger(__name__)
 
 
+class Geometry:
+    """
+    Wrap GeoJSON-like object so that it can be used in tools like Shapely, for example:
+    ```
+    from shapely.geometry import asShape
+    s = asShape(Geometry(object))
+    ```
+    """
+    def __init__(self, object):
+        self.__geo_interface__ = object
+
+
 def run_cmd(cmd: str, *args):
     cmd = [cmd]
     cmd.extend(args)

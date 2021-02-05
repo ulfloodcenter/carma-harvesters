@@ -1,4 +1,3 @@
-import collections
 from urllib.parse import urlparse
 
 from carma_harvesters.geoconnex import Entity

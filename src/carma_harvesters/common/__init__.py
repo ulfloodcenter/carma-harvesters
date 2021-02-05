@@ -3,10 +3,11 @@ import logging
 import tempfile
 import shutil
 import pkg_resources
+from typing import List
 
 import simplejson as json
 
-from carma_schema import validate
+import carma_schema
 
 from .. exception import SchemaValidationException
 
@@ -155,9 +156,10 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
             success = False
         finally:
             f.close()
-        # Overwrite previous file with new file
-        shutil.copy(tmp_out_path, out_file_path)
-        os.unlink(tmp_out_path)
+        if success:
+            # Overwrite previous file with new file
+            shutil.copy(tmp_out_path, out_file_path)
+            os.unlink(tmp_out_path)
     else:
         # Attempt to merge new_data with JSON already in file
         # First, read in existing file contents (which should be JSON)
@@ -186,9 +188,10 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
         finally:
             f.close()
 
-        # Finally, overwrite existing file with updated file, delete temporary file
-        shutil.copy(tmp_out_path, out_file_path)
-        os.unlink(tmp_out_path)
+        if success:
+            # Finally, overwrite existing file with updated file, delete temporary file
+            shutil.copy(tmp_out_path, out_file_path)
+            os.unlink(tmp_out_path)
     return success
 
 
@@ -196,7 +199,7 @@ def open_existing_carma_document(document_path: str) -> dict:
     schema_path = pkg_resources.resource_filename(CARMA_SCHEMA_RSRC_KEY, CARMA_SCHEMA_REL_PATH)
     logger.debug(f"Schema path: {schema_path}")
 
-    valid, result = validate(schema_path, document_path)
+    valid, result = carma_schema.validate(schema_path, document_path)
     if not valid:
         raise SchemaValidationException((f"Validation of {document_path} against schema {schema_path} "
                                          "failed due to the following errors: "
@@ -204,3 +207,20 @@ def open_existing_carma_document(document_path: str) -> dict:
 
     logger.debug(f"Input {document_path} validated successfully against schema {schema_path}")
     return result['document']
+
+
+def write_objects_to_existing_carma_document(objects: List[dict], object_type: str,
+                                             document: dict, document_path: str,
+                                             temp_out: str, overwrite: bool = False):
+    logger.debug(f"Starting to write {object_type} to {document_path}...")
+    if object_type not in carma_schema.DEFINITION_TYPES and \
+        object_type not in carma_schema.DATASET_TYPES:
+        raise ValueError(f"Object type {object_type} is not a known type in CARMA schema.")
+    if object_type not in document or overwrite:
+        document[object_type] = objects
+    else:
+        document[object_type].extend(objects)
+    # We always pass overwrite=True in to output_json because we collate JSON data
+    # above before outputting.
+    output_json(document_path, temp_out, document, overwrite=True)
+    logger.debug(f"Finished writing WaterUseDatasets to {document_path}.")
