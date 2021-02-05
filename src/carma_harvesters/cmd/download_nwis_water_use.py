@@ -1,15 +1,15 @@
 import argparse
 import logging
 import sys
-import pkg_resources
 import os
 import tempfile
 import traceback
 import shutil
 
-from carma_schema import validate, get_county_ids
+from carma_schema import get_county_ids
 
-from .. common import verify_input, output_json
+from .. exception import SchemaValidationException
+from .. common import verify_input, output_json, open_existing_carma_document
 from .. geoconnex.census import County
 from .. usgs.nwis_water_use import download_water_use_data, read_water_use_data, water_use_df_to_carma
 
@@ -43,22 +43,13 @@ def main():
             print(e)
         sys.exit("Invalid input data, exiting.")
 
-    schema_path = pkg_resources.resource_filename('carma_schema', 'data/schema/CARMA-schema-20200709.json')
-    logger.debug(f"Schema path: {schema_path}")
-
-    valid, result = validate(schema_path, abs_carma_inpath)
-    if not valid:
-        sys.exit((f"Validation of {abs_carma_inpath} against schema {schema_path} failed due to the following errors: "
-                  f"{result['errors']}"))
-
-    logger.debug(f"Input {abs_carma_inpath} validated successfully against schema {schema_path}")
-
     try:
+        document = open_existing_carma_document(abs_carma_inpath)
+
         # Make temporary working directory
         temp_out = tempfile.mkdtemp()
         logger.debug(f"Temp dir: {temp_out}")
 
-        document = result['document']
         fq_county_ids = get_county_ids(document)
         short_county_ids = [County.parse_fq_id(fq_id) for fq_id in fq_county_ids]
         logger.debug(f"County IDs to query...")
@@ -99,12 +90,14 @@ def main():
         else:
             document['WaterUseDatasets'].extend(water_use_objects)
         # We always pass overwrite=True in to output_json because we collate JSON data
-        # above before outputing.
+        # above before outputting.
         output_json(abs_carma_inpath, temp_out, document, overwrite=True)
         logger.debug(f"Finished writing WaterUseDatasets to {abs_carma_inpath}.")
+    except SchemaValidationException as e:
+        logger.error(traceback.format_exc())
+        sys.exit(e)
     except Exception as e:
         logger.error(traceback.format_exc())
         sys.exit(e)
     finally:
-        #shutil.rmtree(temp_out)
-        pass
+        shutil.rmtree(temp_out)

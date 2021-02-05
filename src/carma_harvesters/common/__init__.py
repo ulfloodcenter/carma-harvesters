@@ -2,9 +2,13 @@ import os
 import logging
 import tempfile
 import shutil
-from decimal import Decimal
+import pkg_resources
 
 import simplejson as json
+
+from carma_schema import validate
+
+from .. exception import SchemaValidationException
 
 
 DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
@@ -20,6 +24,9 @@ DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
                   }
 DEFAULT_NLCD_YEAR = 2016
 DEFAULT_CDL_YEAR = 2019
+
+CARMA_SCHEMA_RSRC_KEY = 'carma_schema'
+CARMA_SCHEMA_REL_PATH = 'data/schema/CARMA-schema-20210204.json'
 
 
 logger = logging.getLogger(__name__)
@@ -183,3 +190,17 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
         shutil.copy(tmp_out_path, out_file_path)
         os.unlink(tmp_out_path)
     return success
+
+
+def open_existing_carma_document(document_path: str) -> dict:
+    schema_path = pkg_resources.resource_filename(CARMA_SCHEMA_RSRC_KEY, CARMA_SCHEMA_REL_PATH)
+    logger.debug(f"Schema path: {schema_path}")
+
+    valid, result = validate(schema_path, document_path)
+    if not valid:
+        raise SchemaValidationException((f"Validation of {document_path} against schema {schema_path} "
+                                         "failed due to the following errors: "
+                                         f"{result['errors']}"))
+
+    logger.debug(f"Input {document_path} validated successfully against schema {schema_path}")
+    return result['document']
