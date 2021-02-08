@@ -2,6 +2,11 @@ import subprocess
 import logging
 import os
 
+from shapely.geometry.base import BaseGeometry
+from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry.polygon import Polygon
+from shapely.geometry import mapping
+
 
 OGR_PREFIX = os.environ.get('OGR_PREFIX', '/usr')
 
@@ -35,3 +40,13 @@ def run_cmd(cmd: str, *args):
 
 def run_ogr2ogr(*args) -> int:
     return run_cmd(f"{OGR_PREFIX}/bin/ogr2ogr", *args)
+
+
+def intersect_shapely_to_multipolygon(geom1: BaseGeometry, geom2: BaseGeometry) -> dict:
+    isect = geom1.intersection(geom2)
+    if isinstance(isect, Polygon):
+        isect = MultiPolygon([isect])
+    elif not isinstance(isect, MultiPolygon):
+        raise ValueError(f"Intersection of geometries must be a polygon or multipolygon but is {type(isect)} instead.")
+
+    return mapping(isect)

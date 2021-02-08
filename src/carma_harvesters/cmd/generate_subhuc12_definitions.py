@@ -8,14 +8,14 @@ import shutil
 import math
 from collections import OrderedDict
 
-from shapely.geometry import asShape, mapping
+from shapely.geometry import asShape
 
 from carma_schema import get_county_ids, get_huc12_ids
 
 from .. exception import SchemaValidationException
 from .. common import verify_input, output_json, open_existing_carma_document, write_objects_to_existing_carma_document
 from .. geoconnex.usgs import HydrologicUnit
-from .. util import Geometry
+from .. util import Geometry, intersect_shapely_to_multipolygon
 
 
 logger = logging.getLogger(__name__)
@@ -74,12 +74,12 @@ def main():
                     sub_huc['huc12'] = huc['id']
                     sub_huc['county'] = county['id']
                     sub_huc['area'] = 0.0
-                    sub_huc['crops'] = 0.0
-                    sub_huc['developedArea'] = 0.0
-                    sub_huc['maxStreamOrder'] = 0.0
+                    sub_huc['crops'] = [{"year": 2019, "cropArea": 0}]
+                    sub_huc['developedArea'] = [{"year": 2019, "area": 0}]
+                    sub_huc['maxStreamOrder'] = 1.0
                     sub_huc['minStreamLevel'] = 0.0
                     sub_huc['meanAnnualFlow'] = 0.0
-                    sub_huc['geometry'] = mapping(huc_shape.intersection(county_shape))
+                    sub_huc['geometry'] = intersect_shapely_to_multipolygon(huc_shape, county_shape)
                     sub_huc12s.append(sub_huc)
 
         # For each sub-HUC12, save intersection geometry
