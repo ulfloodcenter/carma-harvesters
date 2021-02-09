@@ -5,3 +5,4 @@ requests==2.25.1
 pandas==1.2.1
 simplejson==3.17.2
 shapely=1.7.1
+pyproj==3.0.0.post1

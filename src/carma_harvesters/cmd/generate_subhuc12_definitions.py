@@ -70,16 +70,17 @@ def main():
                 county_shape = asShape(county_geom)
                 # HUC12 intersects with county, create sub HUC12 objects
                 if huc_shape.intersects(county_shape):
+                    sub_huc_geom, area = intersect_shapely_to_multipolygon(huc_shape, county_shape)
                     sub_huc = OrderedDict()
                     sub_huc['huc12'] = huc['id']
                     sub_huc['county'] = county['id']
-                    sub_huc['area'] = 0.0
+                    sub_huc['area'] = area
                     sub_huc['crops'] = [{"year": 2019, "cropArea": 0}]
                     sub_huc['developedArea'] = [{"year": 2019, "area": 0}]
                     sub_huc['maxStreamOrder'] = 1.0
                     sub_huc['minStreamLevel'] = 0.0
                     sub_huc['meanAnnualFlow'] = 0.0
-                    sub_huc['geometry'] = intersect_shapely_to_multipolygon(huc_shape, county_shape)
+                    sub_huc['geometry'] = sub_huc_geom
                     sub_huc12s.append(sub_huc)
 
         # For each sub-HUC12, save intersection geometry
