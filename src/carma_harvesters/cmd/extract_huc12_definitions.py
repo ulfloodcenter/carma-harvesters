@@ -9,8 +9,6 @@ import traceback
 import json
 from collections import OrderedDict
 
-import rasterstats
-
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order

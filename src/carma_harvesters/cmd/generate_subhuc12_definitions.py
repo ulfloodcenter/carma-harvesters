@@ -5,17 +5,15 @@ import os
 import tempfile
 import traceback
 import shutil
-import math
 from collections import OrderedDict
 
 from shapely.geometry import asShape
 
-from carma_schema import get_county_ids, get_huc12_ids
-
 from .. exception import SchemaValidationException
-from .. common import verify_input, output_json, open_existing_carma_document, write_objects_to_existing_carma_document
-from .. geoconnex.usgs import HydrologicUnit
+from .. common import verify_raw_data, verify_input, open_existing_carma_document, write_objects_to_existing_carma_document
 from .. util import Geometry, intersect_shapely_to_multipolygon
+from .. crops.cropscape import calculate_geography_crop_area
+from .. nlcd import get_percent_highly_developed_land
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +26,8 @@ def main():
                                                   'If a HUC12 is entirely contained in a county, a single sub-HUC12 '
                                                   'watershed will be generated whose boundary corresponds to that of '
                                                   'the original HUC12 watershed.'))
+    parser.add_argument('-d', '--datapath', help=('Directory containing data downloaded/extracted from '
+                                                  'bin/download-data.sh.'))
     parser.add_argument('-c', '--carma_inpath', help=('Path of CARMA file containing definitions of HUC12 watersheds '
                                                       'and county definitions. Resulting sub-HUC12 watersheds '
                                                       'will be written to the the same file.'))
@@ -39,6 +39,12 @@ def main():
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+
+    success, data_result = verify_raw_data(args.datapath)
+    if not success:
+        for e in data_result['errors']:
+            print(e)
+        sys.exit("Invalid source data, exiting. Try running 'download-data.sh'.")
 
     abs_carma_inpath = os.path.abspath(args.carma_inpath)
     success, input_result = verify_input(abs_carma_inpath)
@@ -75,17 +81,38 @@ def main():
                     sub_huc['huc12'] = huc['id']
                     sub_huc['county'] = county['id']
                     sub_huc['area'] = area
-                    sub_huc['crops'] = [{"year": 2019, "cropArea": 0}]
-                    sub_huc['developedArea'] = [{"year": 2019, "area": 0}]
+                    sub_huc['crops'] = []
+                    sub_huc['developedArea'] = []
                     sub_huc['maxStreamOrder'] = 1.0
                     sub_huc['minStreamLevel'] = 0.0
                     sub_huc['meanAnnualFlow'] = 0.0
                     sub_huc['geometry'] = sub_huc_geom
                     sub_huc12s.append(sub_huc)
 
-        # For each sub-HUC12, save intersection geometry
+                    # Wrap as sub-HUC12 geometry as a Geometry for zonal stats computation
+                    geom = Geometry(sub_huc_geom)
 
-        # Use intersection geometry to calculate WaSSI weights: W1, W2, W3, W4
+                    # Compute zonal stats for crop cover
+                    cdl_year, cdl_path = data_result['paths']['cdl']
+                    total_crop_area, crop_areas = calculate_geography_crop_area(geom, cdl_path, sub_huc['area'])
+                    logger.debug(f"CDL total crop area: {total_crop_area}")
+                    logger.debug(f"CDL individual crop areas: {crop_areas}")
+                    sub_huc['crops'].append(OrderedDict([
+                        ('year', cdl_year),
+                        ('cropArea', total_crop_area),
+                        ('cropAreaDetail', crop_areas)
+                    ]))
+
+                    # Compute zonal stats for landcover
+                    nlcd_year, nlcd_path = data_result['paths']['nlcd']
+                    developed_nlcd_cells, total_nlcd_cells = get_percent_highly_developed_land(geom, nlcd_path)
+                    developed_proportion = developed_nlcd_cells / total_nlcd_cells
+                    sub_huc['developedArea'].append(OrderedDict([
+                        ('year', nlcd_year),
+                        ('area', sub_huc['area'] * developed_proportion)
+                    ]))
+
+                    # TODO: Calculate stream order, stream level, mean annual flow
 
         # Save sub-HUC12 definitions
         write_objects_to_existing_carma_document(sub_huc12s, 'SubHUC12Watersheds',
