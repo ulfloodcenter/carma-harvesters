@@ -26,11 +26,11 @@ def get_huc12_max_stream_order(huc12_flowline_db: str):
     return r[0]
 
 
-def get_county_stream_characteristics(county_geometry: dict, flowline_db: str) -> (float, float, float):
+def get_geography_stream_characteristics(geometry: dict, flowline_db: str) -> (float, float, float):
     """
-    Query NHD flowlines that intersect a county, returning the following attributes:
+    Query NHD flowlines that intersect a geometry, returning the following attributes:
     max(stream order), min(stream level), and max(mean annual streamflow).
-    :param county_geometry: A Python object that represents a GeoJSON geometry representing the county boundary
+    :param geometry: A Python object that represents a GeoJSON geometry
     :param flowline_db: File path to NHDFlowline Spatialite database
     :return: Tuple consisting of: max(stream order), min(stream level), and max(mean annual streamflow)
     """
@@ -42,10 +42,10 @@ def get_county_stream_characteristics(county_geometry: dict, flowline_db: str) -
     cur = conn.cursor()
 
     # Query NHD Flowlines that intersect with the county geometry
-    county_geometry_str = json.dumps(county_geometry)
+    geometry_str = json.dumps(geometry)
     cur.execute(
         "select max(streamorde), min(streamleve), max(qe_ma) from nhdflowline_network where ST_Intersects(shape, GeomFromGeoJSON(?))",
-        (county_geometry_str,))
+        (geometry_str,))
     record = cur.fetchone()
     max_stream_order = 0.0
     min_stream_level = 0.0

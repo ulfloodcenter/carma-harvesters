@@ -11,6 +11,7 @@ from shapely.geometry import asShape
 
 from .. exception import SchemaValidationException
 from .. common import verify_raw_data, verify_input, open_existing_carma_document, write_objects_to_existing_carma_document
+from .. nhd import get_geography_stream_characteristics
 from .. util import Geometry, intersect_shapely_to_multipolygon
 from .. crops.cropscape import calculate_geography_crop_area
 from .. nlcd import get_percent_highly_developed_land
@@ -112,7 +113,18 @@ def main():
                         ('area', sub_huc['area'] * developed_proportion)
                     ]))
 
-                    # TODO: Calculate stream order, stream level, mean annual flow
+                    # Calculate stream order, stream level, mean annual flow
+                    logger.debug(f"Getting stream characteristics for sub-HUC12 {sub_huc['huc12']}:{sub_huc['county']}. This may take a while...")
+                    max_strm_ord, min_strm_lvl, max_mean_ann_flow = \
+                        get_geography_stream_characteristics(sub_huc['geometry'], data_result['paths']['flowline'])
+                    logger.debug(
+                        f"Stream characteristics: max_strm_ord: {max_strm_ord}, min_strm_lvl: {min_strm_lvl}, max_mean_ann_flow: {max_mean_ann_flow}")
+                    if max_strm_ord:
+                        sub_huc['maxStreamOrder'] = max_strm_ord
+                    if min_strm_lvl:
+                        sub_huc['minStreamLevel'] = min_strm_lvl
+                    if max_mean_ann_flow:
+                        sub_huc['meanAnnualFlow'] = max_mean_ann_flow
 
         # Save sub-HUC12 definitions
         write_objects_to_existing_carma_document(sub_huc12s, 'SubHUC12Watersheds',

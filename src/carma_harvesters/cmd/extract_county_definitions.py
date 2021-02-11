@@ -12,7 +12,7 @@ from collections import OrderedDict
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. census import get_county_population, POPULATION_URL_TEMPLATES
-from .. nhd import get_county_stream_characteristics
+from .. nhd import get_geography_stream_characteristics
 from .. crops.cropscape import calculate_geography_crop_area
 from .. nlcd import get_percent_highly_developed_land
 from .. geoconnex.census import County
@@ -193,7 +193,7 @@ def main():
             # Get stream characteristics
             logger.debug(f"Getting stream characteristics for county {c['id']}. This may take a while...")
             max_strm_ord, min_strm_lvl, max_mean_ann_flow = \
-                get_county_stream_characteristics(c['geometry'], data_result['paths']['flowline'])
+                get_geography_stream_characteristics(c['geometry'], data_result['paths']['flowline'])
             logger.debug(f"Stream characteristics: max_strm_ord: {max_strm_ord}, min_strm_lvl: {min_strm_lvl}, max_mean_ann_flow: {max_mean_ann_flow}")
             c['maxStreamOrder'] = max_strm_ord
             c['minStreamLevel'] = min_strm_lvl
