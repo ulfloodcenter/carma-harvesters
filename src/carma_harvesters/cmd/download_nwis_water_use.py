@@ -9,7 +9,7 @@ import shutil
 from carma_schema import get_county_ids
 
 from .. exception import SchemaValidationException
-from .. common import verify_input, output_json, open_existing_carma_document, write_objects_to_existing_carma_document
+from .. common import verify_input, open_existing_carma_document, write_objects_to_existing_carma_document
 from .. geoconnex.census import County
 from .. usgs.nwis_water_use import download_water_use_data, read_water_use_data, water_use_df_to_carma
 

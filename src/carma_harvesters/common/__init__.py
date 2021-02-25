@@ -132,6 +132,21 @@ def verify_outpath(out_path: str, out_name: str, overwrite=False) -> (bool, dict
     return success, {'errors': errors, 'paths': paths}
 
 
+def verify_output(out_name: str, overwrite=False) -> (bool, dict):
+    errors = []
+    success = True
+
+    out_file_path = os.path.abspath(out_name)
+    if not overwrite:
+        if os.path.exists(out_file_path):
+            success = False
+            errors.append(f"Output file {out_file_path} already exists but overwrite is false.")
+
+    paths = {'out_file_path': out_file_path}
+
+    return success, {'errors': errors, 'paths': paths}
+
+
 def verify_input(input_path: str) -> (bool, dict):
     errors = []
     success = True
