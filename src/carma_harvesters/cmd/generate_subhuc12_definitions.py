@@ -5,6 +5,7 @@ import os
 import tempfile
 import traceback
 import shutil
+import json
 from collections import OrderedDict
 
 from shapely.geometry import asShape
@@ -71,6 +72,7 @@ def main():
         for huc in document['HUC12Watersheds']:
             huc_geom = Geometry(huc['geometry'])
             huc_shape = asShape(huc_geom)
+            huc_geom_geojson = json.dumps(huc['geometry'])
             # Iterate over all counties, checking for an intersection
             for county in document['Counties']:
                 county_geom = Geometry(county['geometry'])
@@ -116,7 +118,8 @@ def main():
                     # Calculate stream order, stream level, mean annual flow
                     logger.debug(f"Getting stream characteristics for sub-HUC12 {sub_huc['huc12']}:{sub_huc['county']}. This may take a while...")
                     max_strm_ord, min_strm_lvl, max_mean_ann_flow = \
-                        get_geography_stream_characteristics(sub_huc['geometry'], data_result['paths']['flowline'])
+                        get_geography_stream_characteristics(sub_huc['geometry'], data_result['paths']['flowline'],
+                                                             huc_geom_geojson)
                     logger.debug(
                         f"Stream characteristics: max_strm_ord: {max_strm_ord}, min_strm_lvl: {min_strm_lvl}, max_mean_ann_flow: {max_mean_ann_flow}")
                     if max_strm_ord:
