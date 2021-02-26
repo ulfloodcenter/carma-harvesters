@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
-from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order
+from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order, get_huc12_min_stream_level
 from .. crops.cropscape import calculate_geography_crop_area
 from .. usgs.recharge import calculate_huc12_mean_recharge
 from .. nlcd import get_percent_highly_developed_land
@@ -103,6 +103,8 @@ def main():
             logger.debug(f"Mean annual flow for HUC12 {id} was {mean_annual_flow}")
             max_stream_order = get_huc12_max_stream_order(tmp_huc12_streams)
             logger.debug(f"Max stream order for HUC12 {id} was {max_stream_order}")
+            min_stream_level = get_huc12_min_stream_level(tmp_huc12_streams)
+            logger.debug(f"Min stream level for HUC12 {id} was {min_stream_level}")
 
             # Read HUC12 geometry from GeoJSON
             with open(tmp_huc12_geom) as f:
@@ -118,6 +120,7 @@ def main():
             h12['description'] = f['properties']['HU_12_NAME']
             h12['area'] = f['properties']['AreaHUC12']
             h12['maxStreamOrder'] = max_stream_order
+            h12['minStreamLevel'] = min_stream_level
             h12['meanAnnualFlow'] = mean_annual_flow
 
             # Compute zonal stats for crop cover

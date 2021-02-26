@@ -30,6 +30,18 @@ def get_huc12_max_stream_order(huc12_flowline_db: str):
     return r[0]
 
 
+def get_huc12_min_stream_level(huc12_flowline_db: str):
+    flowline_conn = sqlite3.connect(huc12_flowline_db)
+    flowline = flowline_conn.cursor()
+
+    query = 'select min(streamleve) from nhdflowline_network'
+    flowline.execute(query)
+    r = flowline.fetchone()
+    if r is None:
+        return None
+    return r[0]
+
+
 def get_geography_stream_characteristics(geometry: dict, flowline_db: str,
                                          huc_geometry_str: str) -> (float, float, float):
     """
