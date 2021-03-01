@@ -65,6 +65,9 @@ def main():
         if 'HUC12Watersheds' not in document or len(document['HUC12Watersheds']) < 1:
             sys.exit(f"No HUC12 watersheds defined in {abs_carma_inpath}")
 
+        if 'Counties' not in document or len(document['Counties']) < 1:
+            sys.exit(f"No counties defined in {abs_carma_inpath}")
+
         # Build sub-HUC12 watersheds (i.e. parts of HUC12 watersheds that intersect a county)
         sub_huc12s = []
 

@@ -57,7 +57,29 @@ one per line, e.g.:
 > A two-digit FIPS indicates that all counties for the entire state should be extracted.
 > A five-digit FIPS indicates that a single county should be extracted.
 
-### Download water use data from NWIS
+### Generate sub-HUC12 areas from county and HUC12 definitions
+```
+carma-subhuc12-generate -d $DATA_PATH -c carma-out.json
+```
+
+The script `carma-subhuc12-generate` will generate sub-HUC12 areas by computing the overlap between HUC12 and county
+geographies in a CARMA data file; a sub-HUC12 area is the portion of a HUC12 that lies in a given county. Consequently,
+the CARMA data file (`carma-out.json` in the example) must have one or more definitions for `HUC12Watersheds` and
+`Counties`. The following items are stored for each sub-HUC12 area: 1. sub-HUC12 geography; 2. area (total area, crops);
+3. landcover (high-density development); and 4. stream stats data (max order, min level, mean annual flow).
+
+### Export CARMA geographies to GeoJSON
+Export HUC12, county, and sub-HUC12 definitions from a CARMA data file into GeoJSON FeatureCollection file using the
+`carma-geojson-export` command:
+```
+carma-geojson-export -c carma-out.json -g carma-out.geojson
+```
+
+All HUC12, county, and sub-HUC12 geometries encountered in a CARMA data file will be output as features
+in a FeatureCollection GeoJSON file, which can be useful for display and debugging purposes. Each CARMA attribute will
+be output as a property for each feature.
+
+### Download county water use data from NWIS
 ```
 carma-download-nwis-wateruse -c carma-out.json -y 2010
 ```
