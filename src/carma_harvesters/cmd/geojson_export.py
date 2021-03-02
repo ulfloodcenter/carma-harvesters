@@ -29,10 +29,12 @@ def _entity_to_geojson_feature(entity, entity_type):
 def main():
     parser = argparse.ArgumentParser(description=('Export HUC12, county, and sub-HUC12 definitions from a CARMA data '
                                                   'file into GeoJSON FeatureCollection file.'))
-    parser.add_argument('-c', '--carma_inpath', help=('Path of CARMA file containing definitions HUC12, county, and '
-                                                      'sub-HUC12 definitions that should be export to GeoJSON.'))
-    parser.add_argument('-g', '--geojson_out', help=('Name of file to contain GeoJSON representations of CARMA '
-                                                     'definitions'))
+    parser.add_argument('-c', '--carma_inpath', required=True,
+                        help=('Path of CARMA file containing definitions HUC12, county, and '
+                              'sub-HUC12 definitions that should be export to GeoJSON.'))
+    parser.add_argument('-g', '--geojson_out', required=True,
+                        help=('Name of file to contain GeoJSON representations of CARMA '
+                              'definitions'))
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()

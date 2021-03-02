@@ -28,11 +28,13 @@ def main():
                                                   'If a HUC12 is entirely contained in a county, a single sub-HUC12 '
                                                   'watershed will be generated whose boundary corresponds to that of '
                                                   'the original HUC12 watershed.'))
-    parser.add_argument('-d', '--datapath', help=('Directory containing data downloaded/extracted from '
-                                                  'bin/download-data.sh.'))
-    parser.add_argument('-c', '--carma_inpath', help=('Path of CARMA file containing definitions of HUC12 watersheds '
-                                                      'and county definitions. Resulting sub-HUC12 watersheds '
-                                                      'will be written to the the same file.'))
+    parser.add_argument('-d', '--datapath', required=True,
+                        help=('Directory containing data downloaded/extracted from '
+                              'bin/download-data.sh.'))
+    parser.add_argument('-c', '--carma_inpath', required=True,
+                        help=('Path of CARMA file containing definitions of HUC12 watersheds '
+                              'and county definitions. Resulting sub-HUC12 watersheds '
+                              'will be written to the the same file.'))
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()

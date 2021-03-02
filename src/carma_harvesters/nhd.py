@@ -43,7 +43,7 @@ def get_huc12_min_stream_level(huc12_flowline_db: str):
 
 
 def get_geography_stream_characteristics(geometry: dict, flowline_db: str,
-                                         huc_geometry_str: str) -> (float, float, float):
+                                         huc_geometry_str: str=None) -> (float, float, float):
     """
     Query NHD flowlines that intersect a geometry, returning the following attributes:
     max(stream order), min(stream level), and max(mean annual streamflow).
@@ -71,7 +71,7 @@ def get_geography_stream_characteristics(geometry: dict, flowline_db: str,
     record = cur.fetchone()
     if record[0]:
         max_stream_order, min_stream_level, max_mean_ann_flow = record
-    else:
+    elif huc_geometry_str:
         logger.debug("No stream flowline found in sub-HUC12 boundary, looking for nearest flowline in the HUC12...")
         # No stream was found in sub-HUC12 polygon.
         # Use stream stats from flowline inside of HUC12 nearest to the sub-HUC12 polygon.

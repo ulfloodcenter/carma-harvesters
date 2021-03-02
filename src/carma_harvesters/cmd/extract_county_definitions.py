@@ -88,14 +88,19 @@ def main():
     parser = argparse.ArgumentParser(description=('Extract county definitions in CARMA format from TIGER/Census\n'
                                                   'datasets. Note: If your OGR installation is not in /usr/local, '
                                                   'set the environment variable OGR_PREFIX appropriately.'))
-    parser.add_argument('-d', '--datapath', help=('Directory containing data downloaded/extracted from '
-                                                  'bin/download-data.sh.'))
-    parser.add_argument('-o', '--outpath', help='Directory where output should be stored.')
-    parser.add_argument('-n', '--outname', help=('Name of file, stored in outpath, where CARMA-schema formatted output '
-                                                'should be stored.'))
-    parser.add_argument('-i', '--county_path', help='Path to file containing one or more state or county FIPS code, one per line.')
+    parser.add_argument('-d', '--datapath', required=True,
+                        help=('Directory containing data downloaded/extracted from '
+                              'bin/download-data.sh.'))
+    parser.add_argument('-o', '--outpath', required=True,
+                        help='Directory where output should be stored.')
+    parser.add_argument('-n', '--outname', required=True,
+                        help=('Name of file, stored in outpath, where CARMA-schema formatted output '
+                              'should be stored.'))
+    parser.add_argument('-i', '--county_path', required=True,
+                        help='Path to file containing one or more state or county FIPS code, one per line.')
     parser.add_argument('-y', '--population_year', type=int, default=2015, help='Year for which county population should be queried from US Census.')
-    parser.add_argument('-c', '--census_api_key', help='Census API key obtained from https://api.census.gov/data/key_signup.html')
+    parser.add_argument('-c', '--census_api_key', required=True,
+                        help='Census API key obtained from https://api.census.gov/data/key_signup.html')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()

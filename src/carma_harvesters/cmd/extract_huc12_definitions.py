@@ -36,12 +36,16 @@ def _read_huc12_id(huc_path: str) -> set:
 
 def main():
     parser = argparse.ArgumentParser(description='Extract HUC12 definitions in CARMA format from NHDPlus datasets')
-    parser.add_argument('-d', '--datapath', help=('Directory containing data downloaded/extracted from '
-                                                  'bin/download-data.sh.'))
-    parser.add_argument('-o', '--outpath', help='Directory where output should be stored.')
-    parser.add_argument('-n', '--outname', help=('Name of file, stored in outpath, where CARMA-schema formatted output '
-                                                'should be stored.'))
-    parser.add_argument('-i', '--huc_path', help='Path to file containing one or more HUC12 identifiers, one per line.')
+    parser.add_argument('-d', '--datapath', required=True,
+                        help=('Directory containing data downloaded/extracted from '
+                              'bin/download-data.sh.'))
+    parser.add_argument('-o', '--outpath', required=True,
+                        help='Directory where output should be stored.')
+    parser.add_argument('-n', '--outname', required=True,
+                        help=('Name of file, stored in outpath, where CARMA-schema formatted output '
+                              'should be stored.'))
+    parser.add_argument('-i', '--huc_path', required=True,
+                        help='Path to file containing one or more HUC12 identifiers, one per line.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()

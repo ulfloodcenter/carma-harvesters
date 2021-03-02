@@ -23,9 +23,10 @@ def main():
                                                   'the counties defined in the specified CARMA data file in CARMA '
                                                   'schema format. Note: existing water use data for the specified year '
                                                   'will be overwritten if present.'))
-    parser.add_argument('-c', '--carma_inpath', help=('Path of CARMA file containing definitions of counties '
-                                                      'for which water use data should be downloaded. Resulting water '
-                                                      'use data will be written to the the same file.'))
+    parser.add_argument('-c', '--carma_inpath', required=True,
+                        help=('Path of CARMA file containing definitions of counties '
+                              'for which water use data should be downloaded. Resulting water '
+                              'use data will be written to the the same file.'))
     parser.add_argument('-y', '--year', type=int, default=2015, help='Year for which water use data should be downloaded.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
