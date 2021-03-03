@@ -34,7 +34,7 @@ def main():
     parser.add_argument('-c', '--carma_inpath', required=True,
                         help=('Path of CARMA file containing definitions of HUC12 watersheds '
                               'and county definitions. Resulting sub-HUC12 watersheds '
-                              'will be written to the the same file.'))
+                              'will be written to the same file.'))
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
