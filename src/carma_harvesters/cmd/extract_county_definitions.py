@@ -98,7 +98,8 @@ def main():
                               'should be stored.'))
     parser.add_argument('-i', '--county_path', required=True,
                         help='Path to file containing one or more state or county FIPS code, one per line.')
-    parser.add_argument('-y', '--population_year', type=int, default=2015, help='Year for which county population should be queried from US Census.')
+    parser.add_argument('-y', '--population_year', type=int, default=2015,
+                        help='Year for which county population should be queried from US Census.')
     parser.add_argument('-c', '--census_api_key', required=True,
                         help='Census API key obtained from https://api.census.gov/data/key_signup.html')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)

@@ -58,11 +58,11 @@ def main():
         sys.exit("Invalid input data, exiting.")
 
     try:
-        document = open_existing_carma_document(abs_carma_inpath)
-
         # Make temporary working directory
         temp_out = tempfile.mkdtemp()
         logger.debug(f"Temp dir: {temp_out}")
+
+        document = open_existing_carma_document(abs_carma_inpath)
 
         if 'HUC12Watersheds' not in document or len(document['HUC12Watersheds']) < 1:
             sys.exit(f"No HUC12 watersheds defined in {abs_carma_inpath}")
