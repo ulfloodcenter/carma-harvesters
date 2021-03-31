@@ -78,7 +78,8 @@ def main():
         [features.append(_entity_to_geojson_feature(e, 'SubHUC12Watershed')) for e in document['SubHUC12Watersheds']]
 
         # Write GeoJSON FeatureCollection
-        output_json(out_result['paths']['out_file_path'], temp_out, feature_collection, args.overwrite)
+        output_json(out_result['paths']['out_file_path'], temp_out, feature_collection, args.overwrite,
+                    validate=None)
 
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
