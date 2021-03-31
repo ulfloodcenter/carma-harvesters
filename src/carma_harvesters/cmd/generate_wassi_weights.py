@@ -24,9 +24,6 @@ def main():
                                                   'et al. 2016 (doi:10.1088/1748-9326/aa51dc). The WaSSI weights are '
                                                   'used to disaggregate county-level water use data to the HUC12 '
                                                   'scale.'))
-    # parser.add_argument('-d', '--datapath', required=True,
-    #                     help=('Directory containing data downloaded/extracted from '
-    #                           'bin/download-data.sh.'))
     parser.add_argument('-c', '--carma_inpath', required=True,
                         help=('Path of CARMA file containing definitions of sub-HUC12 watersheds '
                               'and county definitions. Resulting WaSSI weights '
@@ -43,12 +40,6 @@ def main():
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
-
-    # success, data_result = verify_raw_data(args.datapath)
-    # if not success:
-    #     for e in data_result['errors']:
-    #         print(e)
-    #     sys.exit("Invalid source data, exiting. Try running 'download-data.sh'.")
 
     abs_carma_inpath = os.path.abspath(args.carma_inpath)
     success, input_result = verify_input(abs_carma_inpath)
