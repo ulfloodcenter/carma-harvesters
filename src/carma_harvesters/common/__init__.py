@@ -172,6 +172,15 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
         finally:
             f.close()
         if success:
+            logger.debug(f"Validating temporary CARMA file {tmp_out_path} before attempting to overwrite file {out_file_path}.")
+            schema_path = pkg_resources.resource_filename(CARMA_SCHEMA_RSRC_KEY, CARMA_SCHEMA_REL_PATH)
+            logger.debug(f"Schema path: {schema_path}")
+            valid, result = carma_schema.validate(schema_path, tmp_out_path)
+            if not valid:
+                raise SchemaValidationException((f"Validation of {tmp_out_path} against schema {schema_path} "
+                                                 "failed due to the following errors: "
+                                                 f"{result['errors']}"))
+
             # Overwrite previous file with new file
             shutil.copy(tmp_out_path, out_file_path)
             os.unlink(tmp_out_path)
@@ -202,6 +211,15 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
             success = False
         finally:
             f.close()
+
+        logger.debug(f"Validating temporary CARMA file {tmp_out_path} before attempting to overwrite file {out_file_path}.")
+        schema_path = pkg_resources.resource_filename(CARMA_SCHEMA_RSRC_KEY, CARMA_SCHEMA_REL_PATH)
+        logger.debug(f"Schema path: {schema_path}")
+        valid, result = carma_schema.validate(schema_path, tmp_out_path)
+        if not valid:
+            raise SchemaValidationException((f"Validation of {tmp_out_path} against schema {schema_path} "
+                                             "failed due to the following errors: "
+                                             f"{result['errors']}"))
 
         if success:
             # Finally, overwrite existing file with updated file, delete temporary file

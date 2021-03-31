@@ -5,11 +5,13 @@ import os
 import tempfile
 import traceback
 import shutil
+from dataclasses import asdict
 
 from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity
 from carma_schema.util import get_sub_huc12_id
+from carma_schema.types import AnalysisWaSSI, SurfaceWeightsWaSSI
 
-from carma_harvesters.common import open_existing_carma_document, verify_input, verify_raw_data
+from carma_harvesters.common import open_existing_carma_document, verify_input, write_objects_to_existing_carma_document
 from carma_harvesters.exception import SchemaValidationException
 
 
@@ -68,6 +70,8 @@ def main():
         if 'Counties' not in document or len(document['Counties']) < 1:
             sys.exit(f"No counties defined in {abs_carma_inpath}")
 
+        analysis_wassi_entries = []
+
         # Foreach county...
         for county in document['Counties']:
             logger.debug(f"Calculating weights for HUC12s in county {county['id']}")
@@ -89,9 +93,12 @@ def main():
             w2 = {}
             w3 = {}
             w4 = {}
+            sub_huc12s = []
 
             # 3. Foreach sub-HUC12 in county...
             for sub_huc12 in filter(lambda s: s['county'] == county['id'], document['SubHUC12Watersheds']):
+                sub_huc12s.append(sub_huc12)
+                huc12_id = sub_huc12['huc12']
                 sub_huc_id = get_sub_huc12_id(sub_huc12)
                 # 1. Find sub-HUC12 crop area for specified year, report error if none
                 sub_huc12_crops_for_year = get_crop_data_for_entity(sub_huc12, args.crop_year)
@@ -106,36 +113,49 @@ def main():
 
                 # 3. Calculate weights:
                 # Calculate W1 (A): sub-HUC12 area / county
-                w1[sub_huc_id] = sub_huc12['area'] / county['area']
-                logger.debug(f"Weight W1 (A) for Sub-HUC12 {sub_huc_id} = {w1[sub_huc_id]}")
-                sum_w1 += w1[sub_huc_id]
+                w1[huc12_id] = sub_huc12['area'] / county['area']
+                logger.debug(f"Weight W1 (A) for Sub-HUC12 {sub_huc_id} = {w1[huc12_id]}")
+                sum_w1 += w1[huc12_id]
 
                 # Calculate W2 (CA): sub-HUC12 crop area / county crop area
-                w2[sub_huc_id] = sub_huc12_crops_for_year.crop_area / county_crops_for_year.crop_area
-                logger.debug(f"Weight W2 (CA) for Sub-HUC12 {sub_huc_id} = {w2[sub_huc_id]}")
-                sum_w2 += w2[sub_huc_id]
+                w2[huc12_id] = sub_huc12_crops_for_year.crop_area / county_crops_for_year.crop_area
+                logger.debug(f"Weight W2 (CA) for Sub-HUC12 {sub_huc_id} = {w2[huc12_id]}")
+                sum_w2 += w2[huc12_id]
 
-                w3[sub_huc_id] = sub_huc12['maxStreamOrder']
+                w3[huc12_id] = sub_huc12['maxStreamOrder']
                 # Sum(Max SO) in county so that W3 can later be calculated
                 denom_w3 += sub_huc12['maxStreamOrder']
 
                 # Calculate W4 (HD): Highly devel. area in sub-HUC12 / Highly devel. area in county
-                w4[sub_huc_id] = sub_huc12_devel_area_for_year.area / county_devel_area_for_year.area
-                logger.debug(f"Weight W4 (HD) for Sub-HUC12 {sub_huc_id} = {w4[sub_huc_id]}")
-                sum_w4 += w4[sub_huc_id]
+                w4[huc12_id] = sub_huc12_devel_area_for_year.area / county_devel_area_for_year.area
+                logger.debug(f"Weight W4 (HD) for Sub-HUC12 {sub_huc_id} = {w4[huc12_id]}")
+                sum_w4 += w4[huc12_id]
 
             # Now calculate w3 for each sub-HUC12
             sum_w3 = 0.0
-            for sub_huc_id in w3:
-                w3[sub_huc_id] = w3[sub_huc_id] / denom_w3
-                logger.debug(f"Weight W3 (SO) for Sub-HUC12 {sub_huc_id} = {w3[sub_huc_id]}")
-                sum_w3 += w3[sub_huc_id]
+            for huc12_id in w3:
+                w3[huc12_id] = w3[huc12_id] / denom_w3
+                logger.debug(f"Weight W3 (SO) for Sub-HUC12 {huc12_id} = {w3[huc12_id]}")
+                sum_w3 += w3[huc12_id]
 
-            # TODO: 4. Write AnalysisWaSSI entry to document for this HUC-12, county combination
+            # 4. Save as AnalysisWaSSI object instance for this HUC-12, county combination
             logger.debug(f"Sum of weight W1 for county {county['id']} = {sum_w1}")
             logger.debug(f"Sum of weight W2 for county {county['id']} = {sum_w2}")
             logger.debug(f"Sum of weight W3 for county {county['id']} = {sum_w3}")
             logger.debug(f"Sum of weight W4 for county {county['id']} = {sum_w4}")
+
+            for sub_huc12 in sub_huc12s:
+                huc12_id = sub_huc12['huc12']
+                aw = AnalysisWaSSI(huc12_id, sub_huc12['county'],
+                                   args.crop_year, args.developed_area_year,
+                                   SurfaceWeightsWaSSI(w1[huc12_id], w2[huc12_id], w3[huc12_id], w4[huc12_id]))
+                analysis_wassi_entries.append(asdict(aw))
+
+        # Write AnalysisWaSSI objects to document
+        analyses = [{'WaSSI': analysis_wassi_entries}]
+        write_objects_to_existing_carma_document(analyses, 'Analyses',
+                                                 document, abs_carma_inpath,
+                                                 temp_out, args.overwrite)
 
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
