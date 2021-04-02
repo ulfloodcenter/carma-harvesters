@@ -5,13 +5,14 @@ import os
 import tempfile
 import traceback
 import shutil
-from dataclasses import asdict
+import uuid
 
-from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity
+from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity, get_wassi_analysis_by_id, \
+    update_wassi_analysis_instance
 from carma_schema.util import get_sub_huc12_id
-from carma_schema.types import AnalysisWaSSI, SurfaceWeightsWaSSI
+from carma_schema.types import AnalysisWaSSI, SurfaceWeightsWaSSI, CountyDisaggregationWaSSI
 
-from carma_harvesters.common import open_existing_carma_document, verify_input, write_objects_to_existing_carma_document
+from carma_harvesters.common import open_existing_carma_document, verify_input, output_json
 from carma_harvesters.exception import SchemaValidationException
 
 
@@ -28,10 +29,8 @@ def main():
                         help=('Path of CARMA file containing definitions of sub-HUC12 watersheds '
                               'and county definitions. Resulting WaSSI weights '
                               'will be written to the same file.'))
-    parser.add_argument('-cy', '--crop_year', type=int, default=2019,
-                        help='Year of crop data to use to generate WaSSI weights.')
-    parser.add_argument('-dy', '--developed_area_year', type=int, default=2016,
-                        help='Year of developed area data to use to generate WaSSI weights.')
+    parser.add_argument('-i', '--wassi_id', required=True,
+                        help='UUID representing the ID of WaSSI analysis to add these weights to.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
@@ -48,12 +47,23 @@ def main():
             print(e)
         sys.exit("Invalid input data, exiting.")
 
+    wassi_id = None
+    try:
+        wassi_id = uuid.UUID(args.wassi_id)
+    except ValueError as e:
+        sys.exit(f"Invalid WaSSI ID {args.wassi_id}.")
+
     try:
         # Make temporary working directory
         temp_out = tempfile.mkdtemp()
         logger.debug(f"Temp dir: {temp_out}")
 
         document = open_existing_carma_document(abs_carma_inpath)
+
+        # Find WaSSI analysis specified by wassi_id
+        wassi = get_wassi_analysis_by_id(document, wassi_id)
+        if wassi is None:
+            sys.exit(f"No WaSSI analysis with ID {wassi_id} defined in {abs_carma_inpath}")
 
         if 'SubHUC12Watersheds' not in document or len(document['SubHUC12Watersheds']) < 1:
             sys.exit(f"No sub-HUC12 watersheds defined in {abs_carma_inpath}")
@@ -67,14 +77,14 @@ def main():
         for county in document['Counties']:
             logger.debug(f"Calculating weights for HUC12s in county {county['id']}")
             # 1. Find county crop area for specified year, report error if none
-            county_crops_for_year = get_crop_data_for_entity(county, args.crop_year)
+            county_crops_for_year = get_crop_data_for_entity(county, wassi.cropYear)
             if county_crops_for_year is None:
-                sys.exit(f"County {county['id']} does not have crop data for year {args.crop_year}.")
+                sys.exit(f"County {county['id']} does not have crop data for year {wassi.cropYear}.")
             # 2. Find county developed area for specified year, report error if none
-            county_devel_area_for_year = get_developed_area_data_for_entity(county, args.developed_area_year)
+            county_devel_area_for_year = get_developed_area_data_for_entity(county, wassi.developedAreaYear)
             if county_devel_area_for_year is None:
                 sys.exit(f"County {county['id']} does not have developed area data for "
-                         f"year {args.developed_area_year}.")
+                         f"year {wassi.developedAreaYear}.")
 
             # Initialize accumulator variables for weights to check that each weight sums to 1
             # for a given county
@@ -92,15 +102,15 @@ def main():
                 huc12_id = sub_huc12['huc12']
                 sub_huc_id = get_sub_huc12_id(sub_huc12)
                 # 1. Find sub-HUC12 crop area for specified year, report error if none
-                sub_huc12_crops_for_year = get_crop_data_for_entity(sub_huc12, args.crop_year)
+                sub_huc12_crops_for_year = get_crop_data_for_entity(sub_huc12, wassi.cropYear)
                 if sub_huc12_crops_for_year is None:
                     sys.exit((f"Sub-HUC12 {sub_huc_id} does not have crop data for "
-                              f"year {args.crop_year}."))
+                              f"year {wassi.cropYear}."))
                 # 2. Find sub-HUC12 developed area for specified year, report error if none
-                sub_huc12_devel_area_for_year = get_developed_area_data_for_entity(sub_huc12, args.developed_area_year)
+                sub_huc12_devel_area_for_year = get_developed_area_data_for_entity(sub_huc12, wassi.developedAreaYear)
                 if sub_huc12_devel_area_for_year is None:
                     sys.exit(f"Sub-HUC12 {sub_huc_id} does not have developed area "
-                             f"data for year {args.developed_area_year}.")
+                             f"data for year {wassi.developedAreaYear}.")
 
                 # 3. Calculate weights:
                 # Calculate W1 (A): sub-HUC12 area / county
@@ -135,18 +145,24 @@ def main():
             logger.debug(f"Sum of weight W3 for county {county['id']} = {sum_w3}")
             logger.debug(f"Sum of weight W4 for county {county['id']} = {sum_w4}")
 
+            county_disaggs = []
             for sub_huc12 in sub_huc12s:
                 huc12_id = sub_huc12['huc12']
-                aw = AnalysisWaSSI(huc12_id, sub_huc12['county'],
-                                   args.crop_year, args.developed_area_year,
-                                   SurfaceWeightsWaSSI(w1[huc12_id], w2[huc12_id], w3[huc12_id], w4[huc12_id]))
-                analysis_wassi_entries.append(asdict(aw))
+                ca = CountyDisaggregationWaSSI(huc12_id, sub_huc12['county'],
+                                               SurfaceWeightsWaSSI(w1[huc12_id],
+                                                                   w2[huc12_id],
+                                                                   w3[huc12_id],
+                                                                   w4[huc12_id]))
+                county_disaggs.append(ca)
+            if args.overwrite or wassi.countyDisaggregations is None:
+                wassi.countyDisaggregations = county_disaggs
+            else:
+                wassi.countyDisaggregations = wassi.countyDisaggregations + county_disaggs
 
-        # Write AnalysisWaSSI objects to document
-        analyses = [{'WaSSI': analysis_wassi_entries}]
-        write_objects_to_existing_carma_document(analyses, 'Analyses',
-                                                 document, abs_carma_inpath,
-                                                 temp_out, args.overwrite)
+        # Write updated AnalysisWaSSI instance back to document (always overwrite because we merged
+        # county disaggregation entries above if args.overwrite==True).
+        update_wassi_analysis_instance(document, wassi)
+        output_json(abs_carma_inpath, temp_out, document, True)
 
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())

@@ -29,6 +29,7 @@ setuptools.setup(
             'carma-download-nwis-wateruse=carma_harvesters.cmd.download_nwis_water_use:main',
             'carma-subhuc12-generate=carma_harvesters.cmd.generate_subhuc12_definitions:main',
             'carma-geojson-export=carma_harvesters.cmd.geojson_export:main',
+            'carma-wassi-init=carma_harvesters.cmd.init_wassi_analysis:main',
             'carma-wassi-weight-generate=carma_harvesters.cmd.generate_wassi_weights:main'
     ]},
 )
