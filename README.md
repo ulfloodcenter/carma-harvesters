@@ -94,6 +94,74 @@ carma-download-nwis-wateruse -c carma-out.json -y 2015
 By default, the new year's data will be added to any existing water use data. To overwrite
 use `--overwrite`.
 
+### Import groundwater well data
+Sadly, there is no national source of groundwater well location data. Still we can import groundwater well location
+information into CARMA from state- or jurisdiction-specific format:
+```
+carma-groundwater-well-import -c carma-out.json -w $MY_WELL_DAY -a $MY_WELL_ATTRIBUTE_MAPPING
+```
+
+where:
+- `-w` specifies a point GIS dataset (i.e. a file readible by OGR/fiona) containing well locations along with the
+following attributes: sector, status, and year completed.
+- `-a` specifies a JSON file specifying how well attributes defined in the GIS dataset should be mapped to CARMA
+schema format. See 'Groundwater well attribute mapping JSON format' below for example.
+
+#### Groundwater well attribute mapping JSON format
+Below is an example for extracting CARMA-formatted wells attribute data from Louisiana
+[water wells registration data](https://www.sonris.com).
+```json
+{
+    "attributes": {
+        "sector": "USE_DESCRI",
+        "status": "WELL_STATU",
+        "yearCompleted": "DATE_COMPL"
+    },
+    "values": {
+        "USE_DESCRI": {
+            "Public Supply": ["public supply", "rural public supply",
+                "commercial public supply", "municipal public supply", "institution public supply"],
+            "Domestic": ["domestic"],
+            "Commercial": ["commercial public supply", "aquaculture", "oil/gas well rig supply"],
+            "Industrial": ["industrial\\s*\\.*"],
+            "Power Generation": ["power generation"],
+            "Irrigation": ["irrigation"],
+            "Livestock": ["livestock"]
+        },
+        "WELL_STATU": {
+            "Active": ["Active"],
+            "Abandoned": ["Abandoned"],
+            "Destroyed": ["Destroyed"],
+            "Inactive": ["Inactive"]
+        },
+        "DATE_COMPL": [
+            "(?P<month>[0-9]{1,2})/(?P<year>[0-9]{2,4})",
+            "(?P<month>[0-9]{1,2})/(?P<day>[0-9]{1,2})/(?P<year>[0-9]{2,4})",
+            "CIRCA (?P<month>[0-9]{1,2})/(?P<year>[0-9]{2})",
+            {"LATE 1970's": "1979"},
+            {"LATE 1980's": "1989"},
+            {"PRE/1985": "1984"}
+        ]
+    }
+}
+```
+
+The `attributes` object specifies a one-to-one mapping between CARMA well data attribute names
+and well attribute names in the input point GIS file.
+
+The `values` object specifies a one-to-many mapping GIS file attribute name and
+[regular expressions](https://docs.python.org/3/library/re.html) or mappings that can be used to
+extract CARMA-compatible attribute values from attribute values stored in the GIS file.
+
+For CARMA well data attributes that are enumerated values, the value mapping should map to an object that maps each
+CARMA attribute value to one or more patterns to use to extract that CARMA attribute value from the
+GIS attribute value.
+
+For CARMA well data attributes that can be any value (currently only 'yearCompleted'), the value mapping should map
+to either: (1) a list of regular expressions to use to extract that CARMA attribute value from the
+GIS attribute value; or (2) a static mapping between a GIS attribute value and CARMA attribute value, for example:
+GIS attribute values of "LATE 1970's" should be written as "1979" to the 'yearComplete' CARMA attribute.
+
 ### Define a WaSSI analysis
 To start a new WaSSI analysis, it is necessary to first create a new WaSSI definition in your CARMA file:
 ```
