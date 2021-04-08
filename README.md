@@ -94,6 +94,29 @@ carma-download-nwis-wateruse -c carma-out.json -y 2015
 By default, the new year's data will be added to any existing water use data. To overwrite
 use `--overwrite`.
 
+### Define a WaSSI analysis
+To start a new WaSSI analysis, it is necessary to first create a new WaSSI definition in your CARMA file:
+```
+carma-wassi-init -c carma-out.json -cy 2019 -dy 2016 -d "My WaSSI analysis description"
+```
+
+where:
+- `-cy` specifies the year to use for crop data in the analysis (required)
+- `-dy` specifies the year to use for developed area data in the analysis (required)
+- `-d` specifies the a description to use for the WaSSI analysis (optional)
+
+### Generate disaggregation weights for WaSSI analysis
+WaSSI analysis involves disaggregating county-level water use data to the HUC12 scale. This disaggregation relies on
+a series of weights for both surface water and groundwater:
+```
+carma-wassi-weight-generate -c carma-out.json -i $UUID_OF_WASSI_ANALYSIS
+```
+
+where:
+- `-i` specifies the UUID of a WaSSI analysis definition stored in `carma-out.json`.
+
+> Note that `carma-out.json` must have 'SubHUC12Watersheds' and `Counties` defined.
+
 ## Census data
 
 * API documentation: https://api.census.gov/data.html
