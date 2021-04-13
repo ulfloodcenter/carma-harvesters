@@ -6,20 +6,25 @@
     },
     "values": {
         "USE_DESCRI": {
-            "Public Supply": ["public supply", "rural public supply",
-                "commercial public supply", "municipal public supply", "institution public supply"],
-            "Domestic": ["domestic"],
-            "Commercial": ["commercial public supply", "aquaculture", "oil/gas well rig supply"],
-            "Industrial": ["industrial\\s*\\.*"],
-            "Power Generation": ["power generation"],
-            "Irrigation": ["irrigation"],
-            "Livestock": ["livestock"]
+            "public supply": "Public Supply",
+            "rural public supply": "Public Supply",
+            "commercial public supply": "Public Supply",
+            "municipal public supply": "Public Supply",
+            "institution public supply": "Public Supply",
+            "domestic": "Domestic",
+            "commercial public supply": "Commercial",
+            "aquaculture": "Commercial",
+            "oil/gas well rig supply": "Commercial",
+            "industrial\\s*\\.*": "Industrial",
+            "power generation": "Power Generation",
+            "irrigation": "Irrigation",
+            "livestock": "Livestock"
         },
         "WELL_STATU": {
-            "Active": ["Active"],
-            "Abandoned": ["Abandoned"],
-            "Destroyed": ["Destroyed"],
-            "Inactive": ["Inactive"]
+            "Active": "Active",
+            "Abandoned": "Abandoned",
+            "Destroyed": "Destroyed",
+            "Inactive": "Inactive"
         },
         "DATE_COMPL": [
             "(?P<month>[0-9]{1,2})/(?P<year>[0-9]{2,4})",

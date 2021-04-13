@@ -5,7 +5,8 @@ import os
 import tempfile
 import traceback
 import shutil
-import uuid
+
+from shapely.geometry import asShape
 
 from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity, get_wassi_analysis_by_id, \
     update_wassi_analysis_instance
@@ -13,6 +14,8 @@ from carma_schema.util import get_sub_huc12_id
 from carma_schema.types import AnalysisWaSSI, SurfaceWeightsWaSSI, CountyDisaggregationWaSSI
 
 from carma_harvesters.common import open_existing_carma_document, verify_input, output_json
+from carma_harvesters.util import Geometry, select_points_contained_by_geometry
+from carma_harvesters.wells import WellAttributeMapper
 from carma_harvesters.exception import SchemaValidationException
 
 
@@ -75,10 +78,21 @@ def main():
         if 'Counties' not in document or len(document['Counties']) < 1:
             sys.exit(f"No counties defined in {abs_carma_inpath}")
 
-        # TODO: Foreach county...
-        # 1. Select wells in the county
-        # 2. Extract CARMA attributes for each well
-        # 3. Sum wells in each CARMA catagory and write to document
+        # Open well attribute map
+        well_attr_mapper = WellAttributeMapper(abs_attr_inpath)
+
+        # Foreach county...
+        for county in document['Counties']:
+            county_geom = Geometry(county['geometry'])
+            county_shape = asShape(county_geom)
+
+            # 1. Select wells in the county
+            import pdb; pdb.set_trace()
+            wells = select_points_contained_by_geometry(abs_well_inpath, county_shape)
+            for well in wells['features']:
+                pass
+                # 2. Extract CARMA attributes for each well
+                # 3. Sum wells in each CARMA catagory and write to document
 
         # TODO: Foreach sub-HUC12...
         # 1. Select wells in the sub-HUC12

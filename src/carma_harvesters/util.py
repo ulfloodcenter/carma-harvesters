@@ -6,6 +6,9 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import mapping
+from shapely.geometry import asShape
+
+import geopandas
 
 from pyproj import Geod
 
@@ -56,3 +59,9 @@ def intersect_shapely_to_multipolygon(geom1: BaseGeometry, geom2: BaseGeometry) 
     area = abs(geod.geometry_area_perimeter(isect)[0]) / (1000 * 1000)
 
     return mapping(isect), area
+
+
+def select_points_contained_by_geometry(point_geom_path: str, geom: BaseGeometry) -> dict:
+    pts = geopandas.read_file(point_geom_path, bbox=geom.bounds)
+    pts_clip = geopandas.clip(pts, geom)
+    return pts_clip.__geo_interface__
