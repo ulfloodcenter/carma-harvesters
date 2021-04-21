@@ -243,18 +243,30 @@ def open_existing_carma_document(document_path: str) -> dict:
     return result['document']
 
 
-def write_objects_to_existing_carma_document(objects: List[dict], object_type: str,
-                                             document: dict, document_path: str,
-                                             temp_out: str, overwrite: bool = False):
-    logger.debug(f"Starting to write {object_type} to {document_path}...")
-    if object_type not in carma_schema.DEFINITION_TYPES and \
-        object_type not in carma_schema.DATASET_TYPES:
+def add_to_existing_object(objects_to_add: List[dict], object_type: str,
+                           object: dict, overwrite: bool = False):
+    if object_type not in object or overwrite:
+        object[object_type] = objects_to_add
+    else:
+        object[object_type].extend(objects_to_add)
+
+
+def add_objects_to_existing_carma_document(objects: List[dict], object_type: str,
+                                           document: dict, overwrite: bool = False):
+    if object_type not in carma_schema.DEFINITION_TYPES and object_type not in carma_schema.DATASET_TYPES:
         raise ValueError(f"Object type {object_type} is not a known type in CARMA schema.")
     if object_type not in document or overwrite:
         document[object_type] = objects
     else:
         document[object_type].extend(objects)
-    # We always pass overwrite=True in to output_json because we collate JSON data
+
+
+def write_objects_to_existing_carma_document(objects: List[dict], object_type: str,
+                                             document: dict, document_path: str,
+                                             temp_out: str, overwrite: bool = False):
+    logger.debug(f"Starting to write {object_type} to {document_path}...")
+    add_objects_to_existing_carma_document(objects, object_type, document, overwrite)
+    # We always pass overwrite=True in to output_json because we collateed JSON data
     # above before outputting.
     output_json(document_path, temp_out, document, overwrite=True)
     logger.debug(f"Finished writing WaterUseDatasets to {document_path}.")

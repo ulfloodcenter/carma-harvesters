@@ -6,7 +6,6 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import mapping
-from shapely.geometry import asShape
 
 import geopandas
 
