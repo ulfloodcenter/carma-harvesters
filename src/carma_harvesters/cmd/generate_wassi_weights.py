@@ -7,10 +7,10 @@ import traceback
 import shutil
 import uuid
 
-from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity, get_wassi_analysis_by_id, \
-    update_wassi_analysis_instance
+from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity, get_well_counts_for_entity, \
+    get_wassi_analysis_by_id, update_wassi_analysis_instance
 from carma_schema.util import get_sub_huc12_id
-from carma_schema.types import AnalysisWaSSI, SurfaceWeightsWaSSI, CountyDisaggregationWaSSI
+from carma_schema.types import SurfaceWeightsWaSSI, GroundwaterWeightsWaSSI, CountyDisaggregationWaSSI
 
 from carma_harvesters.common import open_existing_carma_document, verify_input, output_json
 from carma_harvesters.exception import SchemaValidationException
@@ -85,15 +85,26 @@ def main():
             if county_devel_area_for_year is None:
                 sys.exit(f"County {county['id']} does not have developed area data for "
                          f"year {wassi.developedAreaYear}.")
+            # 3. Get county groundwater well counts for specified year, report error if none
+            county_wells_for_year = get_well_counts_for_entity(county, wassi.groundwaterWellsCompletedYear)
+            if len(county_wells_for_year) == 0:
+                sys.exit(f"County {county['id']} does not have groundwater well counts for "
+                         f"year {wassi.groundwaterWellsCompletedYear}.")
+            county_well_counts = {}
+            for wc in county_wells_for_year:
+                if wc.status == 'Active':
+                    county_well_counts[wc.sector] = wc.count
 
             # Initialize accumulator variables for weights to check that each weight sums to 1
             # for a given county
             sum_w1 = sum_w2 = sum_w4 = denom_w3 = 0.0
+            sum_gw1 = GroundwaterWeightsWaSSI()
 
             w1 = {}
             w2 = {}
             w3 = {}
             w4 = {}
+            gw1 = {}
             sub_huc12s = []
 
             # 3. Foreach sub-HUC12 in county...
@@ -112,7 +123,14 @@ def main():
                     sys.exit(f"Sub-HUC12 {sub_huc_id} does not have developed area "
                              f"data for year {wassi.developedAreaYear}.")
 
-                # 3. Calculate weights:
+                # 3. Get sub-HUC12 groundwater well counts for specified year, report error if none
+                sub_huc12_wells_for_year = get_well_counts_for_entity(sub_huc12, wassi.groundwaterWellsCompletedYear)
+                sub_huc12_well_counts = {}
+                for wc in sub_huc12_wells_for_year:
+                    if wc.status == 'Active':
+                        sub_huc12_well_counts[wc.sector] = wc.count
+
+                # 4. Calculate weights:
                 # Calculate W1 (A): sub-HUC12 area / county
                 w1[huc12_id] = sub_huc12['area'] / county['area']
                 logger.debug(f"Weight W1 (A) for Sub-HUC12 {sub_huc_id} = {w1[huc12_id]}")
@@ -132,6 +150,13 @@ def main():
                 logger.debug(f"Weight W4 (HD) for Sub-HUC12 {sub_huc_id} = {w4[huc12_id]}")
                 sum_w4 += w4[huc12_id]
 
+                # Calculate GW1: number of groundwater wells in sub-HUC12 / number of groundwater wells in county
+                sub_huc12_gw1 = GroundwaterWeightsWaSSI()
+                for sector, sub_huc12_count in sub_huc12_well_counts.items():
+                    sub_huc12_gw1[sector] = sub_huc12_count / county_well_counts[sector]
+                gw1[huc12_id] = sub_huc12_gw1
+                sum_gw1.accum(sub_huc12_gw1)
+
             # Now calculate w3 for each sub-HUC12
             sum_w3 = 0.0
             for huc12_id in w3:
@@ -144,6 +169,7 @@ def main():
             logger.debug(f"Sum of weight W2 for county {county['id']} = {sum_w2}")
             logger.debug(f"Sum of weight W3 for county {county['id']} = {sum_w3}")
             logger.debug(f"Sum of weight W4 for county {county['id']} = {sum_w4}")
+            logger.debug(f"Sum of weight GW1 for county {county['id']} = {sum_gw1}")
 
             county_disaggs = []
             for sub_huc12 in sub_huc12s:
@@ -152,7 +178,8 @@ def main():
                                                SurfaceWeightsWaSSI(w1[huc12_id],
                                                                    w2[huc12_id],
                                                                    w3[huc12_id],
-                                                                   w4[huc12_id]))
+                                                                   w4[huc12_id]),
+                                               gw1[huc12_id])
                 county_disaggs.append(ca)
             if args.overwrite or wassi.countyDisaggregations is None:
                 wassi.countyDisaggregations = county_disaggs

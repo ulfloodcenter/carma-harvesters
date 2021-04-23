@@ -31,6 +31,8 @@ def main():
                         help='Year of crop data to use in WaSSI analysis.')
     parser.add_argument('-dy', '--developed_area_year', type=int, default=2016,
                         help='Year of developed area data to use in WaSSI analysis.')
+    parser.add_argument('-wy', '--well_year_completed', type=int, default=2016,
+                        help='Year during or before which wells were completed.')
     parser.add_argument('-d', '--description', help=('Description to be added to description field of WaSSI analysis '
                                                      'object.'))
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
@@ -60,6 +62,7 @@ def main():
         analysis_wassi['id'] = str(uuid.uuid4())
         analysis_wassi['cropYear'] = args.crop_year
         analysis_wassi['developedAreaYear'] = args.developed_area_year
+        analysis_wassi['groundwaterWellsCompletedYear'] = args.well_year_completed
         if args.description:
             analysis_wassi['description'] = args.description
 
