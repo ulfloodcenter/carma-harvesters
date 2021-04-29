@@ -98,7 +98,7 @@ use `--overwrite`.
 Sadly, there is no national source of groundwater well location data. Still we can import groundwater well location
 information into CARMA from state- or jurisdiction-specific format:
 ```
-carma-groundwater-well-import -c carma-out.json -w $MY_WELL_DAY -a $MY_WELL_ATTRIBUTE_MAPPING
+carma-groundwater-well-import -c carma-out.json -w $MY_WELL_DATA -a $MY_WELL_ATTRIBUTE_MAPPING
 ```
 
 where:
@@ -165,12 +165,13 @@ GIS attribute values of "LATE 1970's" should be written as "1979" to the 'yearCo
 ### Define a WaSSI analysis
 To start a new WaSSI analysis, it is necessary to first create a new WaSSI definition in your CARMA file:
 ```
-carma-wassi-init -c carma-out.json -cy 2019 -dy 2016 -d "My WaSSI analysis description"
+carma-wassi-init -c carma-out.json -cy 2019 -dy 2016 -wy 2016 -d "My WaSSI analysis description"
 ```
 
 where:
 - `-cy` specifies the year to use for crop data in the analysis (required)
 - `-dy` specifies the year to use for developed area data in the analysis (required)
+- `-wy` specifies the year to use for groundwater well count data (required)
 - `-d` specifies the a description to use for the WaSSI analysis (optional)
 
 ### Generate disaggregation weights for WaSSI analysis
