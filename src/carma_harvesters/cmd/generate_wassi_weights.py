@@ -10,7 +10,8 @@ import uuid
 from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity, get_well_counts_for_entity, \
     get_wassi_analysis_by_id, update_wassi_analysis_instance
 from carma_schema.util import get_sub_huc12_id
-from carma_schema.types import SurfaceWeightsWaSSI, GroundwaterWeightsWaSSI, CountyDisaggregationWaSSI
+from carma_schema.types import SurfaceWeightsWaSSI, GroundwaterWeightsWaSSI, GroundwaterWeightWaSSI,\
+    CountyDisaggregationWaSSI
 
 from carma_harvesters.common import open_existing_carma_document, verify_input, output_json
 from carma_harvesters.exception import SchemaValidationException
@@ -98,7 +99,7 @@ def main():
             # Initialize accumulator variables for weights to check that each weight sums to 1
             # for a given county
             sum_w1 = sum_w2 = sum_w4 = denom_w3 = 0.0
-            sum_gw1 = GroundwaterWeightsWaSSI()
+            sum_gw1 = GroundwaterWeightWaSSI()
 
             w1 = {}
             w2 = {}
@@ -151,7 +152,7 @@ def main():
                 sum_w4 += w4[huc12_id]
 
                 # Calculate GW1: number of groundwater wells in sub-HUC12 / number of groundwater wells in county
-                sub_huc12_gw1 = GroundwaterWeightsWaSSI()
+                sub_huc12_gw1 = GroundwaterWeightWaSSI()
                 for sector, sub_huc12_count in sub_huc12_well_counts.items():
                     sub_huc12_gw1[sector] = sub_huc12_count / county_well_counts[sector]
                 gw1[huc12_id] = sub_huc12_gw1
@@ -179,7 +180,7 @@ def main():
                                                                    w2[huc12_id],
                                                                    w3[huc12_id],
                                                                    w4[huc12_id]),
-                                               gw1[huc12_id])
+                                               GroundwaterWeightsWaSSI(gw1[huc12_id]))
                 county_disaggs.append(ca)
             if args.overwrite or wassi.countyDisaggregations is None:
                 wassi.countyDisaggregations = county_disaggs

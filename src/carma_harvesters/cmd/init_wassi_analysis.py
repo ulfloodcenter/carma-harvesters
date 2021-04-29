@@ -6,11 +6,10 @@ import tempfile
 import traceback
 import shutil
 import uuid
-from collections import OrderedDict
+from dataclasses import asdict
 
-from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity
-from carma_schema.util import get_sub_huc12_id
-from carma_schema.types import AnalysisWaSSI, SurfaceWeightsWaSSI
+from carma_schema.types import AnalysisWaSSI,\
+    SectorWeightFactorGroundwaterWaSSI, SectorWeightFactorSurfaceWaSSI
 
 from carma_harvesters.common import open_existing_carma_document, verify_input, write_objects_to_existing_carma_document
 from carma_harvesters.exception import SchemaValidationException
@@ -58,16 +57,34 @@ def main():
 
         document = open_existing_carma_document(abs_carma_inpath)
 
-        analysis_wassi = OrderedDict()
-        analysis_wassi['id'] = str(uuid.uuid4())
-        analysis_wassi['cropYear'] = args.crop_year
-        analysis_wassi['developedAreaYear'] = args.developed_area_year
-        analysis_wassi['groundwaterWellsCompletedYear'] = args.well_year_completed
-        if args.description:
-            analysis_wassi['description'] = args.description
+        surface_weight_factors = [
+            SectorWeightFactorSurfaceWaSSI('Irrigation',
+                                           ['w1', 'w2', 'w3']),
+            SectorWeightFactorSurfaceWaSSI('Industrial',
+                                           ['w1', 'w2', 'w4']),
+            SectorWeightFactorSurfaceWaSSI('Public Supply',
+                                           ['w1', 'w4'])
+        ]
+        gw_weight_factors = [
+            SectorWeightFactorGroundwaterWaSSI('Irrigation',
+                                               ['gw1']),
+            SectorWeightFactorGroundwaterWaSSI('Industrial',
+                                               ['gw1']),
+            SectorWeightFactorGroundwaterWaSSI('Public Supply',
+                                               ['gw1']),
+            SectorWeightFactorGroundwaterWaSSI('Domestic',
+                                               ['gw1'])
+        ]
+
+        analysis_wassi = AnalysisWaSSI(str(uuid.uuid4()),
+                                       args.crop_year, args.developed_area_year, args.well_year_completed,
+                                       surface_weight_factors,
+                                       gw_weight_factors,
+                                       description=args.description,
+                                       countyDisaggregations=[])
 
         # Write AnalysisWaSSI object to document
-        analyses = [{'WaSSI': [analysis_wassi]}]
+        analyses = [{'WaSSI': [asdict(analysis_wassi)]}]
         write_objects_to_existing_carma_document(analyses, 'Analyses',
                                                  document, abs_carma_inpath,
                                                  temp_out, args.overwrite)
