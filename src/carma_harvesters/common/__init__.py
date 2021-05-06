@@ -27,7 +27,7 @@ DEFAULT_NLCD_YEAR = 2016
 DEFAULT_CDL_YEAR = 2019
 
 CARMA_SCHEMA_RSRC_KEY = 'carma_schema'
-CARMA_SCHEMA_REL_PATH = 'data/schema/CARMA-schema-20210204.json'
+CARMA_SCHEMA_REL_PATH = 'data/schema/CARMA-schema-20210505.json'
 
 
 logger = logging.getLogger(__name__)

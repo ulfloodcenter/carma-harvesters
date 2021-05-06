@@ -72,8 +72,8 @@ STATE_FIPS_TO_ABBREV = {
 NWIS_TO_CARMA_ATTR = {
     'sector': 'sector',
     'entity_type': 'entityType',
-    'source_type': 'sourceType',
-    'source_quality': 'sourceQuality',
+    'water_source': 'waterSource',
+    'water_type': 'waterType',
     'description': 'description',
     'unit': 'unit'
 }
@@ -147,8 +147,8 @@ def water_use_df_to_carma(water_use_df: pd.DataFrame, url: str, water_use_object
                         value = ZERO
                 datum = {'county': county_id,
                          NWIS_TO_CARMA_ATTR['entity_type']: cat_desc['entity_type'],
-                         NWIS_TO_CARMA_ATTR['source_type']: cat_desc['source_type'],
-                         NWIS_TO_CARMA_ATTR['source_quality']: cat_desc['source_quality'],
+                         NWIS_TO_CARMA_ATTR['water_source']: cat_desc['water_source'],
+                         NWIS_TO_CARMA_ATTR['water_type']: cat_desc['water_type'],
                          NWIS_TO_CARMA_ATTR['sector']: cat_desc['sector'],
                          NWIS_TO_CARMA_ATTR['description']: cat_desc['description'],
                          'sourceData': url,
