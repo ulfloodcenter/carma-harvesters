@@ -28,7 +28,7 @@ CATEGORY_DESCRIPTORS = {
     "Public Supply population served by groundwater, in thousands":
         {
             "sector": "Public Supply",
-            "entity_type": "Water",
+            "entity_type": "Person",
             "water_source": "Groundwater",
             "water_type": "N/A",
             "description": "Public Supply population served by groundwater, in thousands",
