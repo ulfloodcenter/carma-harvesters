@@ -6,7 +6,8 @@ import logging
 import requests
 import pandas as pd
 
-from .. geoconnex.census import County
+from carma_schema.geoconnex.census import County
+
 from . nwis_water_user_constants import CATEGORY_DESCRIPTORS
 
 

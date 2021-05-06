@@ -9,13 +9,14 @@ import traceback
 import json
 from collections import OrderedDict
 
+from carma_schema.geoconnex.census import County
+
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. census import get_county_population, POPULATION_URL_TEMPLATES
 from .. nhd import get_geography_stream_characteristics
 from .. crops.cropscape import calculate_geography_crop_area
 from .. nlcd import get_percent_highly_developed_land
-from .. geoconnex.census import County
 
 
 ST_PATT = re.compile('^\s*([0-9]{2}),*\s*$')

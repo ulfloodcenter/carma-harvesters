@@ -9,13 +9,14 @@ import traceback
 import json
 from collections import OrderedDict
 
+from carma_schema.geoconnex.usgs import HydrologicUnit
+
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order, get_huc12_min_stream_level
 from .. crops.cropscape import calculate_geography_crop_area
 from .. usgs.recharge import calculate_huc12_mean_recharge
 from .. nlcd import get_percent_highly_developed_land
-from .. geoconnex.usgs import HydrologicUnit
 
 
 HUC12_PATT = re.compile('^\s*([0-9]{12}),*\s*$')
