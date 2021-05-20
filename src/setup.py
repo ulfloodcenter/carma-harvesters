@@ -4,7 +4,7 @@ long_description = 'CARMA data harvesters'
 
 setuptools.setup(
     name="carma-harvesters",
-    version="0.1.0",
+    version="0.2.0",
     author="Brian Miles",
     author_email="brian.miles@louisiana.edu",
     description="CARMA harvesters for HUC12, county, & water user data",
@@ -33,4 +33,6 @@ setuptools.setup(
             'carma-wassi-init=carma_harvesters.cmd.init_wassi_analysis:main',
             'carma-wassi-weight-generate=carma_harvesters.cmd.generate_wassi_weights:main'
     ]},
+    include_package_data=True,
+    zip_safe=False
 )
