@@ -1023,7 +1023,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Total Thermoelectric Power",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "Plant Discharge Water",
             "water_type": "Reclaimed",
             "description": "Total Thermoelectric Power reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -1223,7 +1223,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Fossil-fuel Thermoelectric Power",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "Plant Discharge Water",
             "water_type": "Reclaimed",
             "description": "Fossil-fuel Thermoelectric Power reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -1423,7 +1423,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Geothermal Thermoelectric Power",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "Plant Discharge Water",
             "water_type": "Reclaimed",
             "description": "Geothermal Thermoelectric Power reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -1623,7 +1623,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Nuclear Thermoelectric Power",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "Plant Discharge Water",
             "water_type": "Reclaimed",
             "description": "Nuclear Thermoelectric Power reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -1823,7 +1823,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Thermoelectric Power (Once-through cooling)",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "Plant Discharge Water",
             "water_type": "Reclaimed",
             "description": "Thermoelectric Power (Once-through cooling) reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -2023,7 +2023,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Thermoelectric Power (Closed-loop cooling)",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "Plant Discharge Water",
             "water_type": "Reclaimed",
             "description": "Thermoelectric Power (Closed-loop cooling) reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -2189,7 +2189,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Mining",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "All",
             "water_type": "Reclaimed",
             "description": "Mining reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -2729,7 +2729,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Wastewater Treatment",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "Plant Discharge Water",
             "water_type": "Reclaimed",
             "description": "Wastewater Treatment reclaimed wastewater released by public wastewater facilities, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -2893,7 +2893,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Irrigation, Total",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "All",
             "water_type": "Reclaimed",
             "description": "Irrigation, Total reclaimed wastewater, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -3009,7 +3009,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Irrigation, Crop",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "All",
             "water_type": "Reclaimed",
             "description": "Irrigation, Crop reclaimed wastewater for crops, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -3125,7 +3125,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Irrigation, Golf Courses",
             "entity_type": "Water",
-            "water_source": "Reclaimed",
+            "water_source": "All",
             "water_type": "Reclaimed",
             "description": "Irrigation, Golf Courses reclaimed wastewater for golf courses, in Mgal/d",
             "unit": {"name": "Mgal/d",
@@ -3277,7 +3277,7 @@ CATEGORY_DESCRIPTORS = {
         {
             "sector": "Wastewater Treatment",
             "entity_type": "Water",
-            "water_source": "Surface Water",
+            "water_source": "All",
             "water_type": "Reclaimed",
             "description": "Wastewater Treatment reclaimed wastewater released by wastewater facilities, in Mgal/d",
             "unit": {"name": "Mgal/d",
