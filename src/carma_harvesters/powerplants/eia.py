@@ -1,10 +1,12 @@
 import os
 import pkg_resources
 import logging
+from typing import List
 
 from shapely.geometry.base import BaseGeometry
 
 from ..util import select_points_contained_by_geometry
+from carma_schema.types import PowerPlantDataset
 
 
 logger = logging.getLogger(__name__)
@@ -21,5 +23,14 @@ class PowerPlantLocations:
             raise Exception("EIA FORM 860 schedule 2 power plant location file cannot be found or cannot be read.")
         logger.debug(f"Plant location input path: {self.plant_loc_in_path}")
 
-    def get_plants_within_geometry(self, geom: BaseGeometry) -> dict:
-        return select_points_contained_by_geometry(self.plant_loc_in_path, geom)
+    def get_plants_within_geometry(self, geom: BaseGeometry) -> List[PowerPlantDataset]:
+        plants = []
+        points = select_points_contained_by_geometry(self.plant_loc_in_path, geom)
+        if 'features' in points:
+            for p in points['features']:
+                c = p['geometry']['coordinates']
+                plant = PowerPlantDataset(eiaPlantCode=p['properties']['Plant Code'],
+                                          eiaLongitude=c[0],
+                                          eiaLatitude=c[1])
+                plants.append(plant)
+        return plants

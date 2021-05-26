@@ -8,3 +8,4 @@ simplejson==3.17.2
 shapely==1.7.1
 Rtree==0.9.7
 pyproj
+openpyxl==3.0.7

@@ -22,16 +22,15 @@ class TestPowerPlantLocations(unittest.TestCase):
         self.assertIsNotNone(loc)
 
         la_plants = loc.get_plants_within_geometry(test_geom)
-        features = la_plants['features']
         # There should be 92 points in the above polygon
-        self.assertEqual(92, len(features))
+        self.assertEqual(92, len(la_plants))
         # First plant
-        self.assertEqual(6055, features[0]['properties']['Plant Code'])
-        self.assertEqual(-91.3692, features[0]['geometry']['coordinates'][0])
-        self.assertEqual(30.7261, features[0]['geometry']['coordinates'][1])
+        self.assertEqual(6055, la_plants[0].eiaPlantCode)
+        self.assertEqual(-91.3692, la_plants[0].eiaLongitude)
+        self.assertEqual(30.7261, la_plants[0].eiaLatitude)
         # Last plant
-        self.assertEqual(54240, features[-1]['properties']['Plant Code'])
-        self.assertEqual(-92.6497, features[-1]['geometry']['coordinates'][0])
-        self.assertEqual(32.5256, features[-1]['geometry']['coordinates'][1])
+        self.assertEqual(54240, la_plants[-1].eiaPlantCode)
+        self.assertEqual(-92.6497, la_plants[-1].eiaLongitude)
+        self.assertEqual(32.5256, la_plants[-1].eiaLatitude)
 
 

@@ -1,1 +1,3 @@
 include carma_harvesters/data/2___Plant_Y2019.gpkg
+include carma_harvesters/data/sir20145184_Appendix_1_UPDATED_20141107.xlsx
+include carma_harvesters/data/2015_TE_Model_Estimates.xlsx
