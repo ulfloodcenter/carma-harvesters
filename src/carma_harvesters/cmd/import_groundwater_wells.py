@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    parser = argparse.ArgumentParser(description=('Count groundwater wells that intersect a County, HUC12 or '
-                                                  'sub-HUC12 watershed.'))
+    parser = argparse.ArgumentParser(description=('Count groundwater wells that intersect Counties or '
+                                                  'sub-HUC12 watersheds.'))
     parser.add_argument('-c', '--carma_inpath', required=True,
-                        help=('Path of CARMA file containing definitions of HUC12 or sub-HUC12 watersheds '
-                              'and county definitions. Resulting WaSSI weights '
+                        help=('Path of CARMA file containing definitions of sub-HUC12 watersheds '
+                              'and counties. Resulting groundwater well counts '
                               'will be written to the same file.'))
     parser.add_argument('-w', '--well_data_path', required=True,
                         help=('Point GIS dataset containing well locations along with the following attributes: '
