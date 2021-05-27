@@ -71,10 +71,11 @@ def main():
             huc12_plants = usgs_plant_wu.get_huc12_powerplant_water_use(huc12['id'],
                                                                         huc12_plants)
 
-            power_plant_datasets.extend(asdict(huc12_plants))
+            power_plant_datasets.extend(huc12_plants)
 
         # Write updated CARMA file
-        write_objects_to_existing_carma_document(power_plant_datasets, 'PowerPlantDatasets',
+        power_plant_objects = [asdict(p) for p in power_plant_datasets]
+        write_objects_to_existing_carma_document(power_plant_objects, 'PowerPlantDatasets',
                                                  document, abs_carma_inpath,
                                                  temp_out, args.overwrite)
     except SchemaValidationException as e:
