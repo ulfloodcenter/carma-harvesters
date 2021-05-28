@@ -9,6 +9,8 @@ import traceback
 import json
 from collections import OrderedDict
 
+from tqdm import tqdm
+
 from carma_schema.geoconnex.usgs import HydrologicUnit
 
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
@@ -84,7 +86,9 @@ def main():
         logger.debug(f"HUC12s: {huc12_ids}")
 
         carma_huc12s = []
-        for id in huc12_ids:
+        progress_bar = tqdm(huc12_ids)
+        for id in progress_bar:
+            progress_bar.set_description(f"Extracting HUC12 {id}")
             # First pull out HUC12 from WBD
             # e.g.  ogr2ogr -f GeoJSON 080403030102.geojson NHDPlusNationalData/WBDSnapshot_National.shp WBDSnapshot_National -where "HUC_12='080403030102'"
             tmp_huc12_geom = os.path.join(temp_out, 'tmp_huc12.geojson')

@@ -9,3 +9,4 @@ shapely==1.7.1
 Rtree==0.9.7
 pyproj
 openpyxl==3.0.7
+tqdm==4.61.0
