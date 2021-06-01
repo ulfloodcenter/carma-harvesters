@@ -50,6 +50,8 @@ def main():
     parser.add_argument('-i', '--huc_path', required=True,
                         help='Path to file containing one or more HUC12 identifiers, one per line.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
+    parser.add_argument('--debug', help='Debug mode: do not delete output if there is an exception',
+                        action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
 
@@ -76,6 +78,8 @@ def main():
             print(e)
         sys.exit("Invalid input data, exiting.")
 
+    error = False
+
     try:
         # Make temporary working directory
         temp_out = tempfile.mkdtemp()
@@ -90,9 +94,9 @@ def main():
         for id in progress_bar:
             progress_bar.set_description(f"Extracting HUC12 {id}")
             # First pull out HUC12 from WBD
-            # e.g.  ogr2ogr -f GeoJSON 080403030102.geojson NHDPlusNationalData/WBDSnapshot_National.shp WBDSnapshot_National -where "HUC_12='080403030102'"
+            # e.g.  ogr2ogr -f GeoJSON 080403030102.geojson NHDPlusNationalData/WBDSnapshot_National.shp WBDSnapshot_National -where "huc_12='080403030102'"
             tmp_huc12_geom = os.path.join(temp_out, 'tmp_huc12.geojson')
-            where_clause = f"\"HUC_12='{id}'\""
+            where_clause = f"\"huc_12='{id}'\""
             run_ogr2ogr('-f', 'GeoJSON', '-t_srs', 'EPSG:4326', tmp_huc12_geom, data_result['paths']['wbd'], 'WBDSnapshot_National',
                         '-where', where_clause)
             # Then extract NHDFlowlines for the HUC8 that the HUC12 is in...
@@ -123,11 +127,14 @@ def main():
                 raise Exception("More than one feature encountered for HUC12 {id} when only one was expected.")
             f = features[0]
             h12 = OrderedDict()
-            short_id = f['properties']['HUC_12']
+            short_id = f['properties']['huc_12']
             logger.debug(f"HUC12 ID from GeoJSON {short_id}")
             h12['id'] = HydrologicUnit.generate_fq_id(short_id)
-            h12['description'] = f['properties']['HU_12_NAME']
-            h12['area'] = f['properties']['AreaHUC12']
+            if f['properties']['hu_12_name']:
+                h12['description'] = f['properties']['hu_12_name']
+            else:
+                h12['description'] = short_id
+            h12['area'] = f['properties']['areahuc12']
             h12['maxStreamOrder'] = max_stream_order
             h12['minStreamLevel'] = min_stream_level
             h12['meanAnnualFlow'] = mean_annual_flow
@@ -167,6 +174,10 @@ def main():
         output_json(out_result['paths']['out_file_path'], temp_out, carma_definition, args.overwrite)
     except Exception as e:
         logger.error(traceback.format_exc())
+        error = True
         sys.exit(e)
     finally:
-        shutil.rmtree(temp_out)
+        if error and args.debug:
+            pass
+        else:
+            shutil.rmtree(temp_out)

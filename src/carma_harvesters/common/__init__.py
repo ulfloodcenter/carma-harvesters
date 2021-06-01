@@ -12,7 +12,7 @@ import carma_schema
 from .. exception import SchemaValidationException
 
 
-DATA_BASENAMES = {'wbd': 'NHDPlusNationalData/WBDSnapshot_National.shp',
+DATA_BASENAMES = {'wbd': 'WBDSnapshot_National.spatialite',
                   'flowline': 'NHDFlowline_Network.spatialite',
                   'counties': 'TIGER_2013_2017_counties.spatialite',
                   'nlcd': {

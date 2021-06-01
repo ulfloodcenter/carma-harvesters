@@ -9,6 +9,9 @@ wget https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV
   && 7z x NHDPlusV21_NationalData_WBDSnapshot_Shapefile_08.7z \
   && 7z x NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z
 
+# Convert WBD to Spatialite so that we can easily control indices
+ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -skipfailures -t_srs EPSG:4326 WBDSnapshot_National.spatialite NHDPlusNationalData/WBDSnapshot_National.shp WBDSnapshot_National
+
 # Convert Flowlines to SQLite format for later querying
 ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -t_srs EPSG:4326 NHDFlowline_Network.spatialite NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb NHDFlowline_Network
 
@@ -24,6 +27,10 @@ gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vs
 # Reproject USGS groundwater recharge data
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsitar/rech48grd.tgz/arctar00000/rech48grd/w001001x.adf rech48grd.tif
 
+# Create indices to speed up lookups
+sqlite3 WBDSnapshot_National.spatialite "CREATE INDEX IF NOT EXISTS idx_huc_12 ON WBDSnapshot_National (huc_12)"
+sqlite3 NHDFlowline_Network.spatialite "CREATE INDEX IF NOT EXISTS idx_reachcode ON nhdflowline_network (reachcode)"
+
 # Clean up
 # Delete zipfiles
 rm NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z NHDPlusV21_NationalData_WBDSnapshot_Shapefile_08.7z
@@ -31,6 +38,7 @@ rm NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z NHDPlusV21_Nationa
 rm -rf NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb \
   NHDPlusNationalData/NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.txt \
   NHDPlusNationalData/NHDPlusV21_NationalData_WBDSnapshot_FileGDB_08.txt \
+  NHDPlusNationalData/WBDSnapshot_National.* \
   GovernmentUnits_National_GDB.zip \
   NLCD_2016_Land_Cover_L48_20190424.zip \
   2019_30m_cdls.zip \
