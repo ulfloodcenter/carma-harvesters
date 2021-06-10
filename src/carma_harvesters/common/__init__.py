@@ -4,6 +4,7 @@ import tempfile
 import shutil
 import pkg_resources
 from typing import List, Callable
+import sqlite3
 
 import simplejson as json
 
@@ -31,6 +32,23 @@ CARMA_SCHEMA_REL_PATH = 'data/schema/CARMA-schema-20210505.json'
 
 
 logger = logging.getLogger(__name__)
+
+
+def spatialite_to_geojson(spatialite_path: str, table_name: str, geojson_path: str) -> bool:
+    conn = sqlite3.connect(spatialite_path)
+    # Enable Spatialite extension (so that we can do spatial queries)
+    os.environ["SPATIALITE_SECURITY"] = "relaxed"
+    conn.enable_load_extension(True)
+    conn.execute('SELECT load_extension("mod_spatialite")')
+    conn.enable_load_extension(False)
+    cur = conn.cursor()
+
+    cur.execute("SELECT ExportGeoJSON2(?, 'geometry', ?, 12)",
+                (table_name, geojson_path))
+    result = cur.fetchone()
+    if result is None:
+        return False
+    return True
 
 
 def verify_raw_data(data_path: str, year=None) -> (bool, dict):

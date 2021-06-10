@@ -80,6 +80,8 @@ def main():
 
     error = False
 
+    huc8_streams = {}
+
     try:
         # Make temporary working directory
         temp_out = tempfile.mkdtemp()
@@ -95,15 +97,23 @@ def main():
             progress_bar.set_description(f"Extracting HUC12 {id}")
             # First pull out HUC12 from WBD
             # e.g.  ogr2ogr -f GeoJSON 080403030102.geojson NHDPlusNationalData/WBDSnapshot_National.shp WBDSnapshot_National -where "huc_12='080403030102'"
-            tmp_huc12_geom = os.path.join(temp_out, 'tmp_huc12.geojson')
+            tmp_huc12_geom = os.path.join(temp_out, f"tmp_huc12_{id}.geojson")
             where_clause = f"\"huc_12='{id}'\""
             run_ogr2ogr('-f', 'GeoJSON', '-t_srs', 'EPSG:4326', tmp_huc12_geom, data_result['paths']['wbd'], 'WBDSnapshot_National',
                         '-where', where_clause)
+
             # Then extract NHDFlowlines for the HUC8 that the HUC12 is in...
             # e.g. ogr2ogr -f GeoJSON HUC8_08040303_streams.geojson NHDFlowline_Network.sqlite -where "reachcode LIKE '08040303%'"
-            tmp_huc8_streams = os.path.join(temp_out, 'tmp_huc8_flowlines.geojson')
-            where_clause = f"\"reachcode LIKE '{id[:8]}%'\""
-            run_ogr2ogr('-f', 'GeoJSON', tmp_huc8_streams, data_result['paths']['flowline'], '-where', where_clause)
+            huc8_id = id[:8]
+            if huc8_id in huc8_streams:
+                # See if we have already extracted streams for the HUC8
+                tmp_huc8_streams = huc8_streams[huc8_id]
+            else:
+                # Cache HUC8 streams as their can be many HUC12s in a given HUC8
+                tmp_huc8_streams = os.path.join(temp_out, f"tmp_huc8_{huc8_id}_flowlines.spatialite")
+                where_clause = f"\"reachcode LIKE '{huc8_id}%'\""
+                run_ogr2ogr('-f', 'SQLite', tmp_huc8_streams, data_result['paths']['flowline'], '-where', where_clause)
+                huc8_streams[huc8_id] = tmp_huc8_streams
 
             # Then extract HUC8 NHDFlowlines that fall within HUC12 boundary (use HUC8 flowlines instead of national data as
             # this will be much faster).
@@ -135,9 +145,12 @@ def main():
             else:
                 h12['description'] = short_id
             h12['area'] = f['properties']['areahuc12']
-            h12['maxStreamOrder'] = max_stream_order
-            h12['minStreamLevel'] = min_stream_level
-            h12['meanAnnualFlow'] = mean_annual_flow
+            if max_stream_order:
+                h12['maxStreamOrder'] = max_stream_order
+            if min_stream_level:
+                h12['minStreamLevel'] = min_stream_level
+            if mean_annual_flow:
+                h12['meanAnnualFlow'] = mean_annual_flow
 
             # Compute zonal stats for crop cover
             cdl_year, cdl_path = data_result['paths']['cdl']
@@ -162,7 +175,8 @@ def main():
             # Compute zonal stats for groundwater recharge
             recharge_path = data_result['paths']['recharge']
             recharge = calculate_huc12_mean_recharge(f, recharge_path)
-            h12['recharge'] = recharge
+            if recharge:
+                h12['recharge'] = recharge
 
             # Add geometry last so that other properties appear first
             h12['geometry'] = f['geometry']

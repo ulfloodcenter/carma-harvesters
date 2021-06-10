@@ -10,7 +10,7 @@ wget https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV
   && 7z x NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z
 
 # Convert WBD to Spatialite so that we can easily control indices
-ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -skipfailures -t_srs EPSG:4326 WBDSnapshot_National.spatialite NHDPlusNationalData/WBDSnapshot_National.shp WBDSnapshot_National
+ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -nlt PROMOTE_TO_MULTI -t_srs EPSG:4326 WBDSnapshot_National.spatialite NHDPlusNationalData/WBDSnapshot_National.shp WBDSnapshot_National
 
 # Convert Flowlines to SQLite format for later querying
 ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -t_srs EPSG:4326 NHDFlowline_Network.spatialite NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb NHDFlowline_Network
