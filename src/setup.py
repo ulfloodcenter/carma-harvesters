@@ -31,6 +31,7 @@ setuptools.setup(
             'carma-groundwater-well-import=carma_harvesters.cmd.import_groundwater_wells:main',
             'carma-geojson-export=carma_harvesters.cmd.geojson_export:main',
             'carma-power-plant-wateruse-import=carma_harvesters.cmd.import_usgs_powerplant_wateruse:main',
+            'carma-summarize-power-plant-wateruse=carma_harvesters.cmd.summarize_usgs_powerplant_wateruse:main',
             'carma-wassi-init=carma_harvesters.cmd.init_wassi_analysis:main',
             'carma-wassi-weight-generate=carma_harvesters.cmd.generate_wassi_weights:main'
     ]},

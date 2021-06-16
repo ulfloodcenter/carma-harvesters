@@ -8,6 +8,9 @@ import pandas as pd
 from carma_schema.types import PowerPlantDataset
 from carma_schema.types import ConsumptionOrWithdrawalDatum
 
+from carma_harvesters.usgs.nwis_water_use import NWIS_TO_CARMA_ATTR
+
+
 logger = logging.getLogger(__name__)
 
 CARMA_HARVESTERS_RSRC_KEY = 'carma_harvesters'
@@ -25,6 +28,40 @@ USGS_2015_WATER_SOURCE_KEY = 'WATER_SOURCE_CODE'
 USGS_2015_WATER_TYPE_KEY = 'WATER_TYPE_CODE'
 USGS_2015_WITHDRAWAL_KEY = 'WITHDRAWAL'
 USGS_2015_CONSUMPTION_KEY = 'CONSUMPTION'
+
+USGS_POWER_PLANT_DATA_SRC_URLS = {2010: 'https://pubs.usgs.gov/sir/2014/5184/pdf/sir20145184.pdf',
+                                  2015: 'https://pubs.er.usgs.gov/publication/sir20195103'}
+USGS_POWER_PLANT_WATER_USE_UNIT = {
+  "name": "Mgal/d",
+  "primaryDimension": "Million",
+  "secondaryDimension": "Gallon",
+  "tertiaryDimension": "Day"
+}
+
+USGS_THERMO_POWER_WATER_SOURCE_MAP = {
+    'Surface Water': 'surface-water',
+    'Groundwater': 'groundwater'
+}
+USGS_THERMO_POWER_WATER_TYPE_MAP = {
+    'Fresh': 'fresh',
+    'Saline': 'saline'
+}
+
+USGS_THERMO_POWER_CONSUMPTION_DESC_TEMPLATE = "Total Thermoelectric Power consumptive use, {water_type}, in Mgal/d"
+USGS_THERMO_POWER_WITHDRAWAL_DESC_TEMPLATE = "Total Thermoelectric Power self-supplied {water_source} withdrawals, {water_type}, in Mgal/d"
+
+
+def get_consumption_label(water_type: str) -> str:
+    return USGS_THERMO_POWER_CONSUMPTION_DESC_TEMPLATE.format(
+        water_type=USGS_THERMO_POWER_WATER_TYPE_MAP[water_type]
+    )
+
+
+def get_withdrawal_label(water_source: str, water_type: str) -> str:
+    return USGS_THERMO_POWER_WITHDRAWAL_DESC_TEMPLATE.format(
+        water_source=USGS_THERMO_POWER_WATER_SOURCE_MAP[water_source],
+        water_type=USGS_THERMO_POWER_WATER_TYPE_MAP[water_type]
+    )
 
 
 class USGSPowerPlantWaterUse:
@@ -112,3 +149,109 @@ class USGSPowerPlantWaterUse:
                 plants.append(p)
 
         return plants
+
+
+def summarize_powerplant_data_by_huc12(power_plant_datasets: List[dict]) -> List[dict]:
+    # water_use_summaries
+    # Summary data
+    # "Total Thermoelectric Power number of facilities"
+    # "Total Thermoelectric Power reclaimed wastewater, in Mgal/d"
+
+    # Consumption
+    # "Total Thermoelectric Power total consumptive use, in Mgal/d"
+    # "Total Thermoelectric Power consumptive use, saline, in Mgal/d"
+    # "Total Thermoelectric Power consumptive use, fresh, in Mgal/d"
+
+    # Withdrawal summaries
+    # "Total Thermoelectric Power total self-supplied withdrawals, total, in Mgal/d"
+    # "Total Thermoelectric Power total self-supplied withdrawals, saline, in Mgal/d"
+    # "Total Thermoelectric Power total self-supplied withdrawals, fresh, in Mgal/d"
+    # "Total Thermoelectric Power total self-supplied withdrawals, groundwater, in Mgal/d"
+    # "Total Thermoelectric Power total self-supplied withdrawals, surface water, in Mgal/d"
+
+    # Individual withdrawal categories
+    # "Total Thermoelectric Power self-supplied surface-water withdrawals, saline, in Mgal/d"
+    # "Total Thermoelectric Power self-supplied surface-water withdrawals, fresh, in Mgal/d"
+    # "Total Thermoelectric Power self-supplied groundwater withdrawals, saline, in Mgal/d"
+    # "Total Thermoelectric Power self-supplied groundwater withdrawals, fresh, in Mgal/d"
+
+    # Categories to summarize
+    # source: surface water, groundwater, all (total)
+    # type: fresh, saline, any (total)
+
+    # TODO: Make a Pandas dataframe, loop over power plants by HUC12, add them to the dataframe
+    plants = pd.DataFrame(columns=['year', 'huc12', 'data_type', 'water_source', 'water_type', 'value'])
+    for plant in power_plant_datasets:
+        huc12 = plant['huc12']
+        # consumption
+        cons = plant['usgsConsumption']
+        for c in cons:
+            # For now, take first water source and type
+            plants = plants.append({'year': c['year'], 'huc12': huc12, 'data_type': 'consumption',
+                                    'water_source': c['waterSource'][0],
+                                    'water_type': c['waterType'][0],
+                                    'value': c['value']},
+                                   ignore_index=True)
+        # withdrawal
+        withdrawal = plant['usgsWithdrawal']
+        for w in withdrawal:
+            # For now, take first water source and type
+            plants = plants.append({'year': w['year'], 'huc12': huc12, 'data_type': 'withdrawal',
+                                    'water_source': w['waterSource'][0],
+                                    'water_type': w['waterType'][0],
+                                    'value': w['value']},
+                                   ignore_index=True)
+    water_use_objects = []
+    huc12s = plants['huc12'].unique()
+    years = plants['year'].unique()
+    for h in huc12s:
+        # Get consumption data by year
+        huc12_cons = plants.query('huc12 == @h and data_type == "consumption"')
+        grouped = huc12_cons.groupby(['year', 'water_source', 'water_type'])
+        group_sum = grouped.sum()
+        for year in years:
+            val = group_sum.query(
+                'year == @year')['value']
+            consumption = val.iloc[0]
+            water_source = 'All'
+            water_type = val.index[0][2]
+            datum = {
+                'huc12': h,
+                NWIS_TO_CARMA_ATTR['entity_type']: 'Water',
+                NWIS_TO_CARMA_ATTR['water_source']: water_source,
+                NWIS_TO_CARMA_ATTR['water_type']: water_type,
+                NWIS_TO_CARMA_ATTR['sector']: 'Total Thermoelectric Power',
+                NWIS_TO_CARMA_ATTR['description']: get_consumption_label(water_type),
+                'sourceData': USGS_POWER_PLANT_DATA_SRC_URLS[year],
+                'year': year,
+                'value': consumption,
+                NWIS_TO_CARMA_ATTR['unit']: USGS_POWER_PLANT_WATER_USE_UNIT
+            }
+            water_use_objects.append(datum)
+
+        # Get withdrawal data by year
+        huc12_withd = plants.query('huc12 == @h and data_type == "withdrawal"')
+        grouped = huc12_withd.groupby(['year', 'data_type', 'water_source', 'water_type'])
+        group_sum = grouped.sum()
+        for year in years:
+            val = group_sum.query(
+                'year == @year and data_type == "withdrawal"')['value']
+            withdrawal = val.iloc[0]
+            water_source = val.index[0][2]
+            water_type = val.index[0][3]
+            datum = {
+                'huc12': h,
+                NWIS_TO_CARMA_ATTR['entity_type']: 'Water',
+                NWIS_TO_CARMA_ATTR['water_source']: water_source,
+                NWIS_TO_CARMA_ATTR['water_type']: water_type,
+                NWIS_TO_CARMA_ATTR['sector']: 'Total Thermoelectric Power',
+                NWIS_TO_CARMA_ATTR['description']: get_withdrawal_label(water_source,
+                                                                        water_type),
+                'sourceData': USGS_POWER_PLANT_DATA_SRC_URLS[year],
+                'year': year,
+                'value': withdrawal,
+                NWIS_TO_CARMA_ATTR['unit']: USGS_POWER_PLANT_WATER_USE_UNIT
+            }
+            water_use_objects.append(datum)
+
+    return water_use_objects
