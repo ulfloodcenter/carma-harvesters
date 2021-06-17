@@ -9,6 +9,8 @@ import traceback
 import json
 from collections import OrderedDict
 
+from tqdm import tqdm
+
 from carma_schema.geoconnex.census import County
 
 from .. common import verify_raw_data, verify_input, verify_outpath, output_json
@@ -146,7 +148,9 @@ def main():
 
         county_geojson = []
         # Export counties as GeoJSON: 1st entire states
-        for state in fips['state']:
+        progress_bar = tqdm(fips['state'])
+        for state in progress_bar:
+            progress_bar.set_description(f"Extracting counties for state {state}")
             tmp_geojson = os.path.join(temp_out, f"tmp_counties_{state}.geojson")
             county_geojson.append(tmp_geojson)
             where_clause = f"\"state_fipscode='{state}'\""
@@ -154,7 +158,9 @@ def main():
                         'gu_countyorequivalent', '-where', where_clause)
 
         # Export counties as GeoJSON: 2nd individual counties
-        for county in fips['state_county']:
+        progress_bar = tqdm(fips['state_county'])
+        for county in progress_bar:
+            progress_bar.set_description(f"Extracting county {county}")
             tmp_geojson = os.path.join(temp_out, f"tmp_county_{county}.geojson")
             county_geojson.append(tmp_geojson)
             where_clause = f"\"stco_fipscode='{county}'\""
@@ -164,11 +170,13 @@ def main():
 
         # Read county attributes and geometries write to CARMA format
         county_ids = []
-        for geojson in county_geojson:
+        progress_bar = tqdm(county_geojson)
+        for geojson in progress_bar:
             with open(geojson) as f:
                 feat_coll = json.load(f)
             features = feat_coll['features']
             for f in features:
+                progress_bar.set_description(f"Building attributes for county {f['properties']['stco_fipscode']}")
                 c = OrderedDict()
                 short_id = f['properties']['stco_fipscode']
                 logger.debug(f"County ID from GeoJSON {short_id}")
@@ -189,7 +197,10 @@ def main():
         logger.debug(f"Population by county: {pop_by_county}")
 
         # Do county-by-county processing
-        for c in carma_counties:
+        progress_bar = tqdm(carma_counties)
+        for c in progress_bar:
+            short_id = County.get_short_id(c['id'])
+            progress_bar.set_description(f"Adding ancillary data for county {short_id}")
             # Add population data to county definitions
             pops_for_county = pop_by_county[short_id]
             for p in pops_for_county:

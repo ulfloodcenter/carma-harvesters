@@ -71,11 +71,14 @@ def main():
         feature_collection['features'] = features
 
         # Export counties
-        [features.append(_entity_to_geojson_feature(e, 'County')) for e in document['Counties']]
+        if 'Counties' in document:
+            [features.append(_entity_to_geojson_feature(e, 'County')) for e in document['Counties']]
         # Export HUC12 watersheds
-        [features.append(_entity_to_geojson_feature(e, 'HUC12Watershed')) for e in document['HUC12Watersheds']]
+        if 'HUC12Watersheds' in document:
+            [features.append(_entity_to_geojson_feature(e, 'HUC12Watershed')) for e in document['HUC12Watersheds']]
         # Export sub-HUC12 watersheds
-        [features.append(_entity_to_geojson_feature(e, 'SubHUC12Watershed')) for e in document['SubHUC12Watersheds']]
+        if 'SubHUC12Watersheds' in document:
+            [features.append(_entity_to_geojson_feature(e, 'SubHUC12Watershed')) for e in document['SubHUC12Watersheds']]
 
         # Write GeoJSON FeatureCollection
         output_json(out_result['paths']['out_file_path'], temp_out, feature_collection, args.overwrite,

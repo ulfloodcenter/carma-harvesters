@@ -30,6 +30,11 @@ gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vs
 # Create indices to speed up lookups
 sqlite3 WBDSnapshot_National.spatialite "CREATE INDEX IF NOT EXISTS idx_huc_12 ON WBDSnapshot_National (huc_12)"
 sqlite3 NHDFlowline_Network.spatialite "CREATE INDEX IF NOT EXISTS idx_reachcode ON nhdflowline_network (reachcode)"
+sqlite3 NHDFlowline_Network.spatialite "CREATE INDEX IF NOT EXISTS idx_streamorde ON nhdflowline_network (streamorde)"
+sqlite3 NHDFlowline_Network.spatialite "CREATE INDEX IF NOT EXISTS idx_streamleve ON nhdflowline_network (streamleve)"
+sqlite3 NHDFlowline_Network.spatialite "CREATE INDEX IF NOT EXISTS idx_qe_ma ON nhdflowline_network (qe_ma)"
+sqlite3 TIGER_2013_2017_counties.spatialite "CREATE INDEX IF NOT EXISTS idx_state_fipscode ON gu_countyorequivalent (state_fipscode)"
+sqlite3 TIGER_2013_2017_counties.spatialite "CREATE INDEX IF NOT EXISTS idx_stco_fipscode ON gu_countyorequivalent (stco_fipscode)"
 
 # Clean up
 # Delete zipfiles

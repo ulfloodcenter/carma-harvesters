@@ -8,6 +8,8 @@ import shutil
 import json
 from collections import OrderedDict
 
+from tqdm import tqdm
+
 from shapely.geometry import asShape
 
 from .. exception import SchemaValidationException
@@ -74,7 +76,10 @@ def main():
         sub_huc12s = []
 
         # For each HUC12, determine which counties it intersects with
-        for huc in document['HUC12Watersheds']:
+        num_huc12 = len(document['HUC12Watersheds'])
+        progress_bar = tqdm(document['HUC12Watersheds'])
+        for i, huc in enumerate(progress_bar):
+            progress_bar.set_description(f"Generating sub watersheds for HUC12 {i} of {num_huc12}")
             huc_geom = Geometry(huc['geometry'])
             huc_shape = asShape(huc_geom)
             huc_geom_geojson = json.dumps(huc['geometry'])
