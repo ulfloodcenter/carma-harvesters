@@ -44,11 +44,13 @@ USGS_POWER_PLANT_FACILITIES_UNIT = {
 
 USGS_THERMO_POWER_WATER_SOURCE_MAP = {
     'Surface Water': 'surface-water',
-    'Groundwater': 'groundwater'
+    'Groundwater': 'groundwater',
+    'Not reported': 'not reported'
 }
 USGS_THERMO_POWER_WATER_TYPE_MAP = {
     'Fresh': 'fresh',
-    'Saline': 'saline'
+    'Saline': 'saline',
+    'Not reported': 'not reported'
 }
 
 USGS_THERMO_POWER_CONSUMPTION_DESC_TEMPLATE = "Total Thermoelectric Power consumptive use, {water_type}, in Mgal/d"
@@ -57,6 +59,7 @@ USGS_THERMO_POWER_WITHDRAWAL_DESC_TEMPLATE = "Total Thermoelectric Power self-su
 USGS_THERMO_POWER_WITHDRAWAL_SUMMARY = "Total Thermoelectric Power total self-supplied withdrawals, {summary}, in Mgal/d"
 USGS_THERMO_POWER_WITHDRAWAL_TOTAL = "Total Thermoelectric Power total self-supplied withdrawals, total, in Mgal/d"
 USGS_THERMO_POWER_FACILITIES = "Total Thermoelectric Power number of facilities"
+
 
 def get_consumption_label(water_type: str) -> str:
     if water_type == 'Any':

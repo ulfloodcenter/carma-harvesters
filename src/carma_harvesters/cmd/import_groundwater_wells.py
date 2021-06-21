@@ -6,6 +6,8 @@ import tempfile
 import traceback
 import shutil
 
+from tqdm import tqdm
+
 from shapely.geometry import asShape
 
 from carma_harvesters.common import open_existing_carma_document, verify_input, add_to_existing_object, output_json
@@ -80,14 +82,18 @@ def main():
         mapper = WellAttributeMapper(abs_attr_inpath, abs_well_inpath)
 
         # Foreach county...
-        for county in document['Counties']:
+        progress_bar = tqdm(document['Counties'])
+        for county in progress_bar:
+            progress_bar.set_description(f"Summing wells in county {county['county']}")
             county_geom = Geometry(county['geometry'])
             county_shape = asShape(county_geom)
             county_wells = mapper.count_wells_in_geography(county_shape, args.year_completed)
             add_to_existing_object(county_wells, 'groundwaterWells',
                                    county, overwrite=args.overwrite)
         # Foreach sub-HUC12...
-        for sub_huc12 in document['SubHUC12Watersheds']:
+        progress_bar = tqdm(document['SubHUC12Watersheds'])
+        for sub_huc12 in progress_bar:
+            progress_bar.set_description(f"Summing wells in sub-HUC12 watersheds")
             sub_huc12_geom = Geometry(sub_huc12['geometry'])
             sub_huc12_shape = asShape(sub_huc12_geom)
             sub_huc12_wells = mapper.count_wells_in_geography(sub_huc12_shape, args.year_completed)

@@ -1,7 +1,10 @@
 from collections import OrderedDict
 from typing import Tuple
+import logging
 
 import rasterstats
+
+logger = logging.getLogger(__name__)
 
 CDL_RASTER_VALUE_TO_NAME = {
     1: "Corn",
@@ -160,12 +163,17 @@ def calculate_geography_crop_area(zone_features: dict,
                                     categorical=True)[0]
     total_pixels = sum(stats.values())
     crop_areas = OrderedDict()
-    crop_pixels = 0.0
-    for k in stats.keys():
-        if is_crop(k):
-            crop_pixels += stats[k]
-        if k in CDL_RASTER_VALUE_TO_NAME:
-            crop_areas[CDL_RASTER_VALUE_TO_NAME[k]] = (stats[k] / total_pixels) * geography_area
-    total_crop_area = (crop_pixels / total_pixels) * geography_area
+    if total_pixels > 0:
+        crop_pixels = 0.0
+        for k in stats.keys():
+            if is_crop(k):
+                crop_pixels += stats[k]
+            if k in CDL_RASTER_VALUE_TO_NAME:
+                crop_areas[CDL_RASTER_VALUE_TO_NAME[k]] = (stats[k] / total_pixels) * geography_area
+        total_crop_area = (crop_pixels / total_pixels) * geography_area
+    else:
+        # No crops
+        logger.warning(f"No crop data found for geography, returning 0.0.")
+        total_crop_area = 0.0
 
     return total_crop_area, crop_areas

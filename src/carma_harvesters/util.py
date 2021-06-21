@@ -6,6 +6,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import mapping
+from shapely.errors import TopologicalError
 
 import geopandas
 
@@ -47,17 +48,24 @@ def run_ogr2ogr(*args) -> int:
 
 
 def intersect_shapely_to_multipolygon(geom1: BaseGeometry, geom2: BaseGeometry) -> (dict, float):
-    isect = geom1.intersection(geom2)
-    if isinstance(isect, Polygon):
-        isect = MultiPolygon([isect])
-    elif not isinstance(isect, MultiPolygon):
-        raise ValueError(f"Intersection of geometries must be a polygon or multipolygon but is {type(isect)} instead.")
+    intersection = None
+    area = 0.0
+    try:
+        isect = geom1.intersection(geom2)
+        if isinstance(isect, Polygon):
+            isect = MultiPolygon([isect])
+        elif not isinstance(isect, MultiPolygon):
+            raise ValueError(f"Intersection of geometries must be a polygon or multipolygon but is {type(isect)} instead.")
 
-    # Calculate area in km2 using PROJ
-    geod = Geod(ellps='WGS84')
-    area = abs(geod.geometry_area_perimeter(isect)[0]) / (1000 * 1000)
+        # Calculate area in km2 using PROJ
+        geod = Geod(ellps='WGS84')
+        area = abs(geod.geometry_area_perimeter(isect)[0]) / (1000 * 1000)
 
-    return mapping(isect), area
+        intersection = mapping(isect)
+    except TopologicalError as e:
+        logger.warning(f"Unable to intersect geometries due to error: {e}")
+
+    return intersection, area
 
 
 def select_points_contained_by_geometry(point_geom_path: str, geom: BaseGeometry) -> dict:
