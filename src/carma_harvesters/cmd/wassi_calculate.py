@@ -28,9 +28,7 @@ def main():
                         help=('Path of CARMA file containing definitions of WaSSI analysis and HUC12-level water '
                               'use data. HUC12-based WaSSI indices for each sector will be written to the same file.'))
     parser.add_argument('-i', '--wassi_id', required=True,
-                        help='UUID representing the ID of WaSSI analysis to add these weights to.')
-    parser.add_argument('-y', '--year', type=int, default=2015,
-                        help='Year of water use data that should be disaggregated.')
+                        help='UUID representing the ID of WaSSI analysis to calculate values for.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()

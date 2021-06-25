@@ -34,7 +34,8 @@ setuptools.setup(
             'carma-summarize-power-plant-wateruse=carma_harvesters.cmd.summarize_usgs_powerplant_wateruse:main',
             'carma-wassi-init=carma_harvesters.cmd.init_wassi_analysis:main',
             'carma-wassi-weight-generate=carma_harvesters.cmd.generate_wassi_weights:main',
-            'carma-wassi-disagg-wateruse=carma_harvesters.cmd.wassi_disaggregate:main'
+            'carma-wassi-disagg-wateruse=carma_harvesters.cmd.wassi_disaggregate:main',
+            'carma-wassi-calculate=carma_harvesters.cmd.wassi_calculate:main'
     ]},
     include_package_data=True,
     zip_safe=False
