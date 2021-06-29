@@ -7,7 +7,11 @@ import traceback
 import shutil
 from dataclasses import asdict
 
+from tqdm import tqdm
+
 from shapely.geometry import asShape
+
+from carma_schema.geoconnex.usgs import HydrologicUnit
 
 from carma_harvesters.common import open_existing_carma_document, verify_input, write_objects_to_existing_carma_document, output_json
 from carma_harvesters.util import Geometry
@@ -62,7 +66,9 @@ def main():
         power_plant_datasets = []
 
         # Foreach HUC12...
-        for huc12 in document['HUC12Watersheds']:
+        progress_bar = tqdm(document['HUC12Watersheds'])
+        for huc12 in progress_bar:
+            progress_bar.set_description(f"Finding plants in HUC12 {HydrologicUnit.parse_fq_id(huc12['id'])}")
             huc12_geom = Geometry(huc12['geometry'])
             huc12_shape = asShape(huc12_geom)
             # Find power plants in HUC12
