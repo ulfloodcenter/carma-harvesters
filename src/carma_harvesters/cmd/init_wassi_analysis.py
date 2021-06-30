@@ -26,6 +26,8 @@ def main():
                         help=('Path of CARMA file containing definitions of sub-HUC12 watersheds '
                               'and county definitions. Resulting WaSSI analysis header '
                               'will be written to the same file.'))
+    parser.add_argument('-uy', '--water_use_year', type=int, default=2015,
+                        help='Year of water use data to use in WaSSI analysis.')
     parser.add_argument('-cy', '--crop_year', type=int, default=2019,
                         help='Year of crop data to use in WaSSI analysis.')
     parser.add_argument('-dy', '--developed_area_year', type=int, default=2016,
@@ -57,34 +59,15 @@ def main():
 
         document = open_existing_carma_document(abs_carma_inpath)
 
-        surface_weight_factors = [
-            SectorWeightFactorSurfaceWaSSI('Irrigation',
-                                           ['w1', 'w2', 'w3']),
-            SectorWeightFactorSurfaceWaSSI('Industrial',
-                                           ['w1', 'w2', 'w4']),
-            SectorWeightFactorSurfaceWaSSI('Public Supply',
-                                           ['w1', 'w4'])
-        ]
-        gw_weight_factors = [
-            SectorWeightFactorGroundwaterWaSSI('Irrigation',
-                                               ['gw1']),
-            SectorWeightFactorGroundwaterWaSSI('Industrial',
-                                               ['gw1']),
-            SectorWeightFactorGroundwaterWaSSI('Public Supply',
-                                               ['gw1']),
-            SectorWeightFactorGroundwaterWaSSI('Domestic',
-                                               ['gw1'])
-        ]
-
         analysis_wassi = AnalysisWaSSI(str(uuid.uuid4()),
-                                       args.crop_year, args.developed_area_year, args.well_year_completed,
-                                       surface_weight_factors,
-                                       gw_weight_factors,
-                                       description=args.description,
-                                       countyDisaggregations=[])
+                                       args.water_use_year,
+                                       args.crop_year,
+                                       args.developed_area_year,
+                                       args.well_year_completed,
+                                       description=args.description)
 
         # Write AnalysisWaSSI object to document
-        analyses = [{'WaSSI': [asdict(analysis_wassi)]}]
+        analyses = [{'WaSSI': [analysis_wassi.asdict()]}]
         write_objects_to_existing_carma_document(analyses, 'Analyses',
                                                  document, abs_carma_inpath,
                                                  temp_out, args.overwrite)

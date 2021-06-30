@@ -6,14 +6,11 @@ import tempfile
 import traceback
 import shutil
 import uuid
-import math
 
-from carma_schema import get_water_use_data_for_county, get_wassi_analysis_by_id
-from carma_schema.types import get_wateruse_dataset_key
+from carma_schema import CarmaItemNotFound
 
 from carma_harvesters.common import open_existing_carma_document, verify_input, output_json
-from carma_harvesters.analysis.wassi import get_sector_weights, convert_county_wateruse_data_to_huc, \
-    SECTOR_VALUE_TO_PROPERTY_NAME, GW_WEIGHT_KEY
+from carma_harvesters.analysis.wassi import calculate_wassi_for_huc12_watersheds
 from carma_harvesters.exception import SchemaValidationException
 
 
@@ -58,22 +55,16 @@ def main():
 
         document = open_existing_carma_document(abs_carma_inpath)
 
-        if 'HUC12Watersheds' not in document or len(document['HUC12Watersheds']) < 1:
-            sys.exit(f"No HUC12 watersheds defined in {abs_carma_inpath}")
-
-        if 'WaterUseDatasets' not in document or len(document['WaterUseDatasets']) < 1:
-            sys.exit(f"No water use data defined in {abs_carma_inpath}")
-
-        # Find WaSSI analysis specified by wassi_id
-        wassi = get_wassi_analysis_by_id(document, wassi_id)
-        if wassi is None:
-            sys.exit(f"No WaSSI analysis with ID {wassi_id} defined in {abs_carma_inpath}")
-
-        # TODO: Calculate WaSSI for each sector
+        # Calculate WaSSI for each sector
+        calculate_wassi_for_huc12_watersheds(abs_carma_inpath, document, wassi_id,
+                                             args.overwrite)
 
         # Write document back out
         output_json(abs_carma_inpath, temp_out, document, True)
 
+    except CarmaItemNotFound as cinf:
+        logger.error(traceback.format_exc())
+        sys.exit(cinf)
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
         sys.exit(e)

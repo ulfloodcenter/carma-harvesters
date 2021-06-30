@@ -34,6 +34,10 @@ CARMA_SCHEMA_REL_PATH = 'data/schema/CARMA-schema-20210505.json'
 logger = logging.getLogger(__name__)
 
 
+def almost_equal(x: float, y: float, tolerance=0.0000001) -> bool:
+    return abs(x - y) < tolerance
+
+
 def spatialite_to_geojson(spatialite_path: str, table_name: str, geojson_path: str) -> bool:
     conn = sqlite3.connect(spatialite_path)
     # Enable Spatialite extension (so that we can do spatial queries)
