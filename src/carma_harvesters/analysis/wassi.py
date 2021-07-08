@@ -5,9 +5,11 @@ import logging
 
 import pandas as pd
 
-from carma_schema.types import AnalysisWaSSI, WaterUseDataset
+from carma_schema.types import AnalysisWaSSI, WaterUseDataset, WassiValue, \
+    WASSI_SECTOR_ALL, WASSI_SECTOR_IRR, WASSI_SECTOR_IND, WASSI_SECTOR_PUB, WASSI_SECTOR_PWR, WASSI_SECTOR_DOM,\
+    WASSI_SOURCE_ALL, WASSI_SOURCE_SURF, WASSI_SOURCE_GW
 from carma_schema import CarmaItemNotFound
-from carma_schema import get_water_use_data_for_huc12, get_wassi_analysis_by_id
+from carma_schema import get_water_use_data_for_huc12, get_wassi_analysis_by_id, update_wassi_analysis_instance
 
 from carma_harvesters.common import almost_equal
 from carma_harvesters.analysis.conversion import cfs_to_mgd, mm_per_km2_per_yr_to_mgd
@@ -61,6 +63,7 @@ def _get_group_sum_value(group_sum: pd.DataFrame, query: str, value_field='value
 
 
 def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, wassi_id: UUID,
+                                         env_flow=0.5,
                                          overwrite=False):
     if 'HUC12Watersheds' not in document or len(document['HUC12Watersheds']) < 1:
         raise CarmaItemNotFound(f"No HUC12 watersheds defined in {abs_carma_inpath}")
@@ -76,39 +79,126 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
     wassi_values = []
 
     for huc12 in document['HUC12Watersheds']:
+        huc12_id = huc12['id']
         if 'meanAnnualFlow' not in huc12:
-            logger.warning(f"HUC12 {huc12['id']} does not have meanAnnualFlow data, so WaSSI cannot be calculated.")
+            logger.warning(f"HUC12 {huc12_id} does not have meanAnnualFlow data, so WaSSI cannot be calculated.")
             continue
         mean_annual_flow_mgd = cfs_to_mgd(huc12['meanAnnualFlow'])
         if 'recharge' not in huc12:
-            logger.warning(f"HUC12 {huc12['id']} does not have recharge data, so WaSSI cannot be calculated.")
+            logger.warning(f"HUC12 {huc12_id} does not have recharge data, so WaSSI cannot be calculated.")
             continue
         recharge_mgd = mm_per_km2_per_yr_to_mgd(huc12['recharge'], huc12['area'])
-        # TODO: Fetch water use data for this HUC12 and store in Pandas dataframe for analysis
+        # Fetch water use data for this HUC12 and store in Pandas dataframe for analysis
         huc_wu = pd.DataFrame(columns=['water_source', 'sector', 'value'])
-        for wud in get_water_use_data_for_huc12(document, huc12['id'], wassi.waterUseYear):
+        for wud in get_water_use_data_for_huc12(document, huc12_id, wassi.waterUseYear):
             huc_wu = huc_wu.append({'water_source': wud['waterSource'],
                                    'sector': wud['sector'],
                                    'value': wud['value']},
                                    ignore_index=True)
         # Calculate terms for WaSSI
         total_withdrawal = huc_wu.sum()['value']
-        total_no_gw_withdrawal = huc_wu.query('water_source != "Groundwater"').sum()['value']
-        total_no_surf_withdrawal = huc_wu.query('water_source != "Surface Water"').sum()['value']
-        assert almost_equal(total_withdrawal, total_no_gw_withdrawal + total_no_surf_withdrawal)
-        grouped = huc_wu.groupby(['sector'])
+        total_gw_withdrawal = huc_wu.query('water_source == "Groundwater"').sum()['value']
+        total_surf_withdrawal = huc_wu.query('water_source == "Surface Water"').sum()['value']
+        if not almost_equal(total_withdrawal, total_gw_withdrawal + total_surf_withdrawal):
+            logger.warning((f"total_withdrawal {total_withdrawal} is not equivalent to "
+                            f"total_gw_withdrawal {total_gw_withdrawal} plus "
+                            f"total_surf_withdrawal {total_surf_withdrawal}"))
+        grouped = huc_wu.groupby(['sector', 'water_source'])
         group_sum = grouped.sum()
         domestic_withdrawal = _get_group_sum_value(group_sum, 'sector == "Domestic"')
+        domestic_surf_withdrawal = _get_group_sum_value(group_sum,
+                                                        'sector == "Domestic" and water_source == "Surface Water"')
         industrial_withdrawal = _get_group_sum_value(group_sum, 'sector == "Industrial"')
+        industrial_surf_withdrawal = _get_group_sum_value(group_sum,
+                                                          'sector == "Industrial" and water_source == "Surface Water"')
         irigation_withdrawal = _get_group_sum_value(group_sum, 'sector == "Irrigation"')
+        irigation_surf_withdrawal = _get_group_sum_value(group_sum,
+                                                         'sector == "Irrigation" and water_source == "Surface Water"')
         public_supply_withdrawal = _get_group_sum_value(group_sum, 'sector == "Public Supply"')
+        public_supply_surf_withdrawal = _get_group_sum_value(group_sum,
+                                                             'sector == "Public Supply" and water_source == "Surface Water"')
         thermo_electric_withdrawal = _get_group_sum_value(group_sum, 'sector == "Total Thermoelectric Power"')
+        thermo_electric_surf_withdrawal = _get_group_sum_value(group_sum,
+                                                               'sector == "Total Thermoelectric Power" and water_source == "Surface Water"')
 
-        # TODO: Calculate various WaSSI values and store in WassiValue objects
+        # Calculate various WaSSI values and store in WassiValue objects
+        env_flow_scalar = (1 - env_flow)
+        # Main WaSSI
+        total_wassi = total_withdrawal / (
+                (env_flow_scalar * (mean_annual_flow_mgd + total_surf_withdrawal)) + recharge_mgd)
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_ALL,
+                       WASSI_SOURCE_ALL,
+                       total_wassi)
+        )
+        # Surface water vs. groundwater stress
+        # Surface WaSSI: Eliminate GW demand and availability
+        surface_wassi = total_surf_withdrawal / (env_flow_scalar * (mean_annual_flow_mgd + total_surf_withdrawal))
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_ALL,
+                       WASSI_SOURCE_SURF,
+                       surface_wassi)
+        )
+        # GW WaSSI: Eliminate surface demand and availability
+        gw_wassi = total_gw_withdrawal / recharge_mgd
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_ALL,
+                       WASSI_SOURCE_GW,
+                       gw_wassi)
+        )
+        # Irrigation WaSSI
+        irrigation_wassi = irigation_withdrawal / (
+                env_flow_scalar * (mean_annual_flow_mgd + irigation_surf_withdrawal) + recharge_mgd)
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_IRR,
+                       WASSI_SOURCE_ALL,
+                       irrigation_wassi)
+        )
+        # Industrial WaSSI
+        industrial_wassi = industrial_withdrawal / (
+                env_flow_scalar * (mean_annual_flow_mgd + industrial_surf_withdrawal) + recharge_mgd)
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_IND,
+                       WASSI_SOURCE_ALL,
+                       industrial_wassi)
+        )
+        # Public supply WaSSI
+        public_supply_wassi = public_supply_withdrawal / (
+                env_flow_scalar * (mean_annual_flow_mgd + public_supply_surf_withdrawal) + recharge_mgd)
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_PUB,
+                       WASSI_SOURCE_ALL,
+                       public_supply_wassi)
+        )
+        # Thermoelectric generation WaSSI
+        thermo_electric_wassi = thermo_electric_withdrawal / (
+                env_flow_scalar * (mean_annual_flow_mgd + thermo_electric_surf_withdrawal) + recharge_mgd)
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_PWR,
+                       WASSI_SOURCE_ALL,
+                       thermo_electric_wassi)
+        )
+        # Domestic WaSSI
+        domestic_wassi = domestic_withdrawal / (
+                env_flow_scalar * (mean_annual_flow_mgd + domestic_surf_withdrawal) + recharge_mgd)
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_DOM,
+                       WASSI_SOURCE_ALL,
+                       domestic_wassi)
+        )
 
-
-    # TODO: Write WaSSI values to AnalysisWaSSI object
+    # Write WaSSI values to AnalysisWaSSI object
     if overwrite or wassi.wassiValues is None:
         wassi.wassiValues = wassi_values
     else:
         wassi.wassiValues = wassi.wassiValues + wassi_values
+
+    update_wassi_analysis_instance(document, wassi)

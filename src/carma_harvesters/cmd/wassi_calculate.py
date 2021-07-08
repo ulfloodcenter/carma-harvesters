@@ -33,7 +33,7 @@ def main():
     if args.verbose:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     else:
-        logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+        logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
 
     abs_carma_inpath = os.path.abspath(args.carma_inpath)
     success, input_result = verify_input(abs_carma_inpath)
@@ -55,7 +55,7 @@ def main():
 
         document = open_existing_carma_document(abs_carma_inpath)
 
-        # Calculate WaSSI for each sector
+        # Calculate WaSSI
         calculate_wassi_for_huc12_watersheds(abs_carma_inpath, document, wassi_id,
                                              args.overwrite)
 
