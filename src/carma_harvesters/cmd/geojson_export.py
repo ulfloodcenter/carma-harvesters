@@ -6,6 +6,9 @@ import tempfile
 import traceback
 import shutil
 from collections import OrderedDict
+import uuid
+
+from carma_schema import CarmaItemNotFound, get_wassi_analysis_by_id, join_wassi_values_to_huc12_geojson
 
 from .. exception import SchemaValidationException
 from .. common import verify_input, verify_output, open_existing_carma_document, output_json
@@ -35,6 +38,8 @@ def main():
     parser.add_argument('-g', '--geojson_out', required=True,
                         help=('Name of file to contain GeoJSON representations of CARMA '
                               'definitions'))
+    parser.add_argument('-i', '--wassi_id', required=False,
+                        help='UUID representing the ID of WaSSI analysis to export HUC12 values for.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
@@ -57,8 +62,21 @@ def main():
             print(e)
         sys.exit("Invalid output path, exiting.")
 
+    wassi_id = None
+    if args.wassi_id:
+        try:
+            wassi_id = uuid.UUID(args.wassi_id)
+        except ValueError as e:
+            sys.exit(f"Invalid WaSSI ID {args.wassi_id}.")
+
     try:
         document = open_existing_carma_document(abs_carma_inpath)
+
+        wassi = None
+        if wassi_id:
+            wassi = get_wassi_analysis_by_id(document, wassi_id)
+            if wassi is None:
+                raise CarmaItemNotFound(f"No WaSSI analysis with ID {wassi_id} defined in {abs_carma_inpath}")
 
         # Make temporary working directory
         temp_out = tempfile.mkdtemp()
@@ -75,7 +93,10 @@ def main():
             [features.append(_entity_to_geojson_feature(e, 'County')) for e in document['Counties']]
         # Export HUC12 watersheds
         if 'HUC12Watersheds' in document:
-            [features.append(_entity_to_geojson_feature(e, 'HUC12Watershed')) for e in document['HUC12Watersheds']]
+            if wassi:
+                [features.append(join_wassi_values_to_huc12_geojson(wassi, _entity_to_geojson_feature(e, 'HUC12Watershed'))) for e in document['HUC12Watersheds']]
+            else:
+                [features.append(_entity_to_geojson_feature(e, 'HUC12Watershed')) for e in document['HUC12Watersheds']]
         # Export sub-HUC12 watersheds
         if 'SubHUC12Watersheds' in document:
             [features.append(_entity_to_geojson_feature(e, 'SubHUC12Watershed')) for e in document['SubHUC12Watersheds']]
@@ -84,6 +105,9 @@ def main():
         output_json(out_result['paths']['out_file_path'], temp_out, feature_collection, args.overwrite,
                     validate=None)
 
+    except CarmaItemNotFound as cinf:
+        logger.error(traceback.format_exc())
+        sys.exit(cinf)
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
         sys.exit(e)
