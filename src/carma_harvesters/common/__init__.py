@@ -17,15 +17,18 @@ DATA_BASENAMES = {'wbd': 'WBDSnapshot_National.spatialite',
                   'flowline': 'NHDFlowline_Network.spatialite',
                   'counties': 'TIGER_2013_2017_counties.spatialite',
                   'nlcd': {
+                      2011: 'nlcd_2011_land_cover_l48_20210604-WGS84.tif',
                       2016: 'NLCD_2016_Land_Cover_L48_20190424-WGS84.tif'
                     },
                   'cdl': {
+                      2010: '2010_30m_cdls.tif',
+                      2015: '2015_30m_cdls.tif',
                       2019: '2019_30m_cdls.tif'
                     },
                   'rech48grd': 'rech48grd.tif'
                   }
 DEFAULT_NLCD_YEAR = 2016
-DEFAULT_CDL_YEAR = 2019
+DEFAULT_CDL_YEAR = 2015
 
 CARMA_SCHEMA_RSRC_KEY = 'carma_schema'
 CARMA_SCHEMA_REL_PATH = 'data/schema/CARMA-schema-20210505.json'
@@ -55,16 +58,11 @@ def spatialite_to_geojson(spatialite_path: str, table_name: str, geojson_path: s
     return True
 
 
-def verify_raw_data(data_path: str, year=None) -> (bool, dict):
+def verify_raw_data(data_path: str,
+                    nlcd_year=DEFAULT_NLCD_YEAR,
+                    cdl_year=DEFAULT_CDL_YEAR) -> (bool, dict):
     errors = []
     data_ok = True
-
-    if year is None:
-        nlcd_year = DEFAULT_NLCD_YEAR
-        cdl_year = DEFAULT_CDL_YEAR
-    else:
-        nlcd_year = year
-        cdl_year = year
 
     if nlcd_year not in DATA_BASENAMES['nlcd']:
         data_ok = False

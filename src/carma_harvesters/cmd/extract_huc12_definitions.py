@@ -13,7 +13,8 @@ from tqdm import tqdm
 
 from carma_schema.geoconnex.usgs import HydrologicUnit
 
-from .. common import verify_raw_data, verify_input, verify_outpath, output_json
+from .. common import verify_raw_data, DEFAULT_NLCD_YEAR, DEFAULT_CDL_YEAR, \
+    verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order, get_huc12_min_stream_level
 from .. crops.cropscape import calculate_geography_crop_area
@@ -49,6 +50,10 @@ def main():
                               'should be stored.'))
     parser.add_argument('-i', '--huc_path', required=True,
                         help='Path to file containing one or more HUC12 identifiers, one per line.')
+    parser.add_argument('-ly', '--landcover_year', required=False, type=int, default=DEFAULT_NLCD_YEAR,
+                        help='Year of NLCD landcover data to use to derive developed area.')
+    parser.add_argument('-cy', '--crop_year', required=False, type=int, default=DEFAULT_CDL_YEAR,
+                        help='Year USDA Cropland Data Layer to use for crops data.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--debug', help='Debug mode: do not delete output if there is an exception',
                         action='store_true', default=False)
@@ -58,9 +63,11 @@ def main():
     if args.verbose:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     else:
-        logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+        logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
 
-    success, data_result = verify_raw_data(args.datapath)
+    success, data_result = verify_raw_data(args.datapath,
+                                           nlcd_year=args.landcover_year,
+                                           cdl_year=args.crop_year)
     if not success:
         for e in data_result['errors']:
             print(e)

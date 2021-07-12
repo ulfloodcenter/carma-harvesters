@@ -13,7 +13,8 @@ from tqdm import tqdm
 
 from carma_schema.geoconnex.census import County
 
-from .. common import verify_raw_data, verify_input, verify_outpath, output_json
+from .. common import verify_raw_data, DEFAULT_NLCD_YEAR, DEFAULT_CDL_YEAR, \
+    verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
 from .. census import get_county_population, POPULATION_URL_TEMPLATES
 from .. nhd import get_geography_stream_characteristics
@@ -105,6 +106,10 @@ def main():
                         help='Year for which county population should be queried from US Census.')
     parser.add_argument('-c', '--census_api_key', required=True,
                         help='Census API key obtained from https://api.census.gov/data/key_signup.html')
+    parser.add_argument('-ly', '--landcover_year', required=False, type=int, default=DEFAULT_NLCD_YEAR,
+                        help='Year of NLCD landcover data to use to derive developed area.')
+    parser.add_argument('-cy', '--crop_year', required=False, type=int, default=DEFAULT_CDL_YEAR,
+                        help='Year USDA Cropland Data Layer to use for crops data.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
@@ -117,7 +122,9 @@ def main():
     if args.population_year not in POPULATION_URL_TEMPLATES:
         sys.exit(f"Population year must be one of: {list(POPULATION_URL_TEMPLATES.keys())}")
 
-    success, data_result = verify_raw_data(args.datapath)
+    success, data_result = verify_raw_data(args.datapath,
+                                           nlcd_year=args.landcover_year,
+                                           cdl_year=args.crop_year)
     if not success:
         for e in data_result['errors']:
             print(e)

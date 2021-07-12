@@ -3,8 +3,11 @@
 wget https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV21_NationalData_WBDSnapshot_Shapefile_08.7z \
   https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z \
   https://s3-us-west-2.amazonaws.com/mrlc/NLCD_2016_Land_Cover_L48_20190424.zip \
+  https://s3-us-west-2.amazonaws.com/mrlc/nlcd_2011_land_cover_l48_20210604.zip \
   https://prd-tnm.s3.amazonaws.com/StagedProducts/GovtUnit/National/GDB/GovernmentUnits_National_GDB.zip \
   ftp://ftp.nass.usda.gov/download/res/2019_30m_cdls.zip \
+  ftp://ftp.nass.usda.gov/download/res/2010_30m_cdls.zip \
+  ftp://ftp.nass.usda.gov/download/res/2015_30m_cdls.zip \
   https://water.usgs.gov/GIS/dsdl/rech48grd.tgz \
   && 7z x NHDPlusV21_NationalData_WBDSnapshot_Shapefile_08.7z \
   && 7z x NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z
@@ -20,9 +23,12 @@ ogr2ogr -f "SQLite" -dsco "SPATIALITE=YES" -t_srs EPSG:4326 TIGER_2013_2017_coun
 
 # Reproject NLCD data to WGS84
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/NLCD_2016_Land_Cover_L48_20190424.zip/NLCD_2016_Land_Cover_L48_20190424.img NLCD_2016_Land_Cover_L48_20190424-WGS84.tif
+gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/nlcd_2011_land_cover_l48_20210604.zip/nlcd_2011_land_cover_l48_20210604.img nlcd_2011_land_cover_l48_20210604-WGS84.tif
 
 # Reproject CropScape Cropland Data Layer (CDL) to WGS84
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/2019_30m_cdls.zip/2019_30m_cdls.img 2019_30m_cdls.tif
+gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/2015_30m_cdls.zip/2015_30m_cdls.img 2015_30m_cdls.tif
+gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/2010_30m_cdls.zip/2010_30m_cdls.img 2010_30m_cdls.tif
 
 # Reproject USGS groundwater recharge data
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsitar/rech48grd.tgz/arctar00000/rech48grd/w001001x.adf rech48grd.tif
