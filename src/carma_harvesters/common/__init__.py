@@ -33,6 +33,9 @@ DEFAULT_CDL_YEAR = 2015
 CARMA_SCHEMA_RSRC_KEY = 'carma_schema'
 CARMA_SCHEMA_REL_PATH = 'data/schema/CARMA-schema-20210505.json'
 
+JSON_DEFAULT_INDENT = ' '
+JSON_DEFAULT_SEPARATORS = (',', ':')
+
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +193,7 @@ def _carma_schema_validate(tmp_out_path: str) -> bool:
 
 
 def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bool = False,
+                indent=JSON_DEFAULT_INDENT, separators=JSON_DEFAULT_SEPARATORS,
                 validate: Callable[[str], bool]=_carma_schema_validate) -> bool:
     success = True
     if overwrite:
@@ -197,7 +201,7 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
         f = tempfile.NamedTemporaryFile(dir=temp_out, mode='w', delete=False)
         tmp_out_path = f.name
         try:
-            json.dump(new_data, f, use_decimal=True)
+            json.dump(new_data, f, indent=indent, separators=separators, use_decimal=True)
         except TypeError as e:
             logger.error(f"Unable to output JSON data to temporary file {tmp_out_path} due to error: {e}")
             success = False
@@ -232,7 +236,7 @@ def output_json(out_file_path: str, temp_out: str, new_data: dict, overwrite: bo
         f = tempfile.NamedTemporaryFile(dir=temp_out, mode='w', delete=False)
         tmp_out_path = f.name
         try:
-            json.dump(existing_data, f, use_decimal=True)
+            json.dump(existing_data, f, indent=indent, separators=separators, use_decimal=True)
         except TypeError as e:
             logger.error(f"Unable to output JSON data to temporary file {tmp_out_path} due to error: {e}")
             success = False

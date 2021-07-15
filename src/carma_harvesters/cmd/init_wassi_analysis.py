@@ -28,11 +28,11 @@ def main():
                               'will be written to the same file.'))
     parser.add_argument('-uy', '--water_use_year', type=int, default=2015,
                         help='Year of water use data to use in WaSSI analysis.')
-    parser.add_argument('-cy', '--crop_year', type=int, default=2019,
+    parser.add_argument('-cy', '--crop_year', type=int, default=2015,
                         help='Year of crop data to use in WaSSI analysis.')
     parser.add_argument('-dy', '--developed_area_year', type=int, default=2016,
                         help='Year of developed area data to use in WaSSI analysis.')
-    parser.add_argument('-wy', '--well_year_completed', type=int, default=2016,
+    parser.add_argument('-wy', '--well_year_completed', type=int, default=2015,
                         help='Year during or before which wells were completed.')
     parser.add_argument('-d', '--description', help=('Description to be added to description field of WaSSI analysis '
                                                      'object.'))

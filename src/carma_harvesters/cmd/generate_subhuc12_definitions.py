@@ -13,7 +13,8 @@ from typing import List
 from shapely.geometry import asShape
 
 from .. exception import SchemaValidationException
-from .. common import verify_raw_data, verify_input, open_existing_carma_document, write_objects_to_existing_carma_document
+from .. common import verify_raw_data, DEFAULT_NLCD_YEAR, DEFAULT_CDL_YEAR,\
+    verify_input, open_existing_carma_document, write_objects_to_existing_carma_document
 from .. nhd import get_geography_stream_characteristics
 from .. util import Geometry, intersect_shapely_to_multipolygon
 from .. crops.cropscape import calculate_geography_crop_area
@@ -53,7 +54,7 @@ def do_generate_subhuc12_definitions(data_result: dict, document: dict, huc: dic
             sub_huc['geometry'] = sub_huc_geom
             sub_huc12s.append(sub_huc)
 
-            # Wrap as sub-HUC12 geometry as a Geometry for zonal stats computation
+            # Wrap sub-HUC12 geometry as a Geometry for zonal stats computation
             geom = Geometry(sub_huc_geom)
 
             # Compute zonal stats for crop cover
@@ -112,6 +113,10 @@ def main():
                         help=('Path of CARMA file containing definitions of HUC12 watersheds '
                               'and county definitions. Resulting sub-HUC12 watersheds '
                               'will be written to the same file.'))
+    parser.add_argument('-ly', '--landcover_year', required=False, type=int, default=DEFAULT_NLCD_YEAR,
+                        help='Year of NLCD landcover data to use to derive developed area.')
+    parser.add_argument('-cy', '--crop_year', required=False, type=int, default=DEFAULT_CDL_YEAR,
+                        help='Year USDA Cropland Data Layer to use for crops data.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
@@ -121,7 +126,9 @@ def main():
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
 
-    success, data_result = verify_raw_data(args.datapath)
+    success, data_result = verify_raw_data(args.datapath,
+                                           nlcd_year=args.landcover_year,
+                                           cdl_year=args.crop_year)
     if not success:
         for e in data_result['errors']:
             print(e)

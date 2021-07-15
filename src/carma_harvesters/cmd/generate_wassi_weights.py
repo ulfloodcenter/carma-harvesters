@@ -75,6 +75,7 @@ def main():
         analysis_wassi_entries = []
 
         # Foreach county...
+        # TODO: Add progress bar
         for county in document['Counties']:
             logger.debug(f"Calculating weights for HUC12s in county {county['id']}")
             # 1. Find county crop area for specified year, report error if none

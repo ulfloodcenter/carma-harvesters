@@ -50,12 +50,14 @@ USGS_THERMO_POWER_WATER_SOURCE_MAP = {
 USGS_THERMO_POWER_WATER_TYPE_MAP = {
     'Fresh': 'fresh',
     'Saline': 'saline',
-    'Not reported': 'not reported'
+    'Not reported': 'not reported',
+    'Reclaimed': 'reclaimed'
 }
 
 USGS_THERMO_POWER_CONSUMPTION_DESC_TEMPLATE = "Total Thermoelectric Power consumptive use, {water_type}, in Mgal/d"
 USGS_THERMA_POWER_CONSUMPTION_DESC_ALL = "Total Thermoelectric Power total consumptive use, in Mgal/d"
 USGS_THERMO_POWER_WITHDRAWAL_DESC_TEMPLATE = "Total Thermoelectric Power self-supplied {water_source} withdrawals, {water_type}, in Mgal/d"
+USGS_THERMO_POWER_PLANT_DISCHARGE_WATER = "Total Thermoelectric Power reclaimed wastewater, in Mgal/d"
 USGS_THERMO_POWER_WITHDRAWAL_SUMMARY = "Total Thermoelectric Power total self-supplied withdrawals, {summary}, in Mgal/d"
 USGS_THERMO_POWER_WITHDRAWAL_TOTAL = "Total Thermoelectric Power total self-supplied withdrawals, total, in Mgal/d"
 USGS_THERMO_POWER_FACILITIES = "Total Thermoelectric Power number of facilities"
@@ -71,10 +73,13 @@ def get_consumption_label(water_type: str) -> str:
 
 def get_withdrawal_label(water_source: str = None, water_type: str = None) -> str:
     if water_source and water_type:
-        return USGS_THERMO_POWER_WITHDRAWAL_DESC_TEMPLATE.format(
-            water_source=USGS_THERMO_POWER_WATER_SOURCE_MAP[water_source],
-            water_type=USGS_THERMO_POWER_WATER_TYPE_MAP[water_type]
-        )
+        if water_source == 'Plant Discharge Water' and water_type == 'Reclaimed':
+            return USGS_THERMO_POWER_PLANT_DISCHARGE_WATER
+        else:
+            return USGS_THERMO_POWER_WITHDRAWAL_DESC_TEMPLATE.format(
+                water_source=USGS_THERMO_POWER_WATER_SOURCE_MAP[water_source],
+                water_type=USGS_THERMO_POWER_WATER_TYPE_MAP[water_type]
+            )
     elif water_source:
         return USGS_THERMO_POWER_WITHDRAWAL_SUMMARY.format(
             summary=USGS_THERMO_POWER_WATER_SOURCE_MAP[water_source]

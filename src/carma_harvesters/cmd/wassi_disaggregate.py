@@ -31,8 +31,6 @@ def main():
                               'use data. Disaggregated HUC12-scale water use data will be written to the same file.'))
     parser.add_argument('-i', '--wassi_id', required=True,
                         help='UUID representing the ID of WaSSI analysis to add these weights to.')
-    parser.add_argument('-y', '--year', type=int, default=2015,
-                        help='Year of water use data that should be disaggregated.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
@@ -71,9 +69,10 @@ def main():
             sys.exit(f"No WaSSI analysis with ID {wassi_id} defined in {abs_carma_inpath}")
 
         # Foreach county disaggregation in WaSSI analysis
+        # TODO: Add progress bar
         huc12_wuds = {}
         for disag in wassi.countyDisaggregations:
-            for wud in get_water_use_data_for_county(document, disag.county, args.year):
+            for wud in get_water_use_data_for_county(document, disag.county, wassi.waterUseYear):
                 sector_weights = get_sector_weights(wassi, wud.waterSource, wud.sector)
                 if len(sector_weights) == 0:
                     logger.warning((f"Unable to find sector weights for water source {wud.waterSource} "

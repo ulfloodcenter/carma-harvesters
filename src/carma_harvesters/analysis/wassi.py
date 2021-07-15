@@ -11,7 +11,6 @@ from carma_schema.types import AnalysisWaSSI, WaterUseDataset, WassiValue, \
 from carma_schema import CarmaItemNotFound
 from carma_schema import get_water_use_data_for_huc12, get_wassi_analysis_by_id, update_wassi_analysis_instance
 
-from carma_harvesters.common import almost_equal
 from carma_harvesters.analysis.conversion import cfs_to_mgd, mm_per_km2_per_yr_to_mgd
 
 
@@ -55,6 +54,8 @@ def convert_county_wateruse_data_to_huc(county_wu: WaterUseDataset, huc_id, scal
 
 
 def _get_group_sum_value(group_sum: pd.DataFrame, query: str) -> float:
+    if group_sum.empty:
+        return 0.0
     sum_val = group_sum.query(query)
     if len(sum_val) >= 1:
         return float(sum_val.sum())
