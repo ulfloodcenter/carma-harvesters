@@ -4,7 +4,7 @@ long_description = 'CARMA data harvesters'
 
 setuptools.setup(
     name="carma-harvesters",
-    version="0.2.0",
+    version="0.3.0",
     author="Brian Miles",
     author_email="brian.miles@louisiana.edu",
     description="CARMA harvesters for HUC12, county, & water user data",
@@ -25,6 +25,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'carma-huc12-extract=carma_harvesters.cmd.extract_huc12_definitions:main',
+            'carma-huc12-update=carma_harvesters.cmd.update_huc12_definitions:main',
             'carma-county-extract=carma_harvesters.cmd.extract_county_definitions:main',
             'carma-download-nwis-wateruse=carma_harvesters.cmd.download_nwis_water_use:main',
             'carma-subhuc12-generate=carma_harvesters.cmd.generate_subhuc12_definitions:main',
