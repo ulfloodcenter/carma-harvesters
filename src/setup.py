@@ -30,6 +30,7 @@ setuptools.setup(
             'carma-county-update=carma_harvesters.cmd.update_county_definitions:main',
             'carma-download-nwis-wateruse=carma_harvesters.cmd.download_nwis_water_use:main',
             'carma-subhuc12-generate=carma_harvesters.cmd.generate_subhuc12_definitions:main',
+            'carma-subhuc12-update=carma_harvesters.cmd.update_subhuc12_definitions:main',
             'carma-groundwater-well-import=carma_harvesters.cmd.import_groundwater_wells:main',
             'carma-geojson-export=carma_harvesters.cmd.geojson_export:main',
             'carma-power-plant-wateruse-import=carma_harvesters.cmd.import_usgs_powerplant_wateruse:main',

@@ -34,7 +34,7 @@ def _read_huc12_id(huc_path: str) -> set:
 
 
 def main():
-    parser = argparse.ArgumentParser(description=('Update HUC12 definitions in CARMA format by adding additional '
+    parser = argparse.ArgumentParser(description=('Update sub-HUC12 definitions in CARMA format by adding additional '
                                                   'year of crop and landcover data.'))
     parser.add_argument('-d', '--datapath', required=True,
                         help=('Directory containing data downloaded/extracted from '
@@ -83,22 +83,23 @@ def main():
 
         document = open_existing_carma_document(abs_carma_inpath)
 
-        if 'HUC12Watersheds' not in document or len(document['HUC12Watersheds']) < 1:
-            sys.exit(f"No HUC12 watersheds defined in {abs_carma_inpath}")
+        if 'SubHUC12Watersheds' not in document or len(document['SubHUC12Watersheds']) < 1:
+            sys.exit(f"No SubHUC12 watersheds defined in {abs_carma_inpath}")
 
-        huc12s = document['HUC12Watersheds']
+        huc12s = document['SubHUC12Watersheds']
         progress_bar = tqdm(huc12s)
-        for h12 in progress_bar:
-            progress_bar.set_description(f"Updating {h12['id']}")
+        for subH12 in progress_bar:
+            id = f"{subH12['county']}:{subH12['huc12']}"
+            progress_bar.set_description(f"Updating {id}")
 
             # Wrap HUC12 geometry as a Geometry for zonal stats computation
-            geom = Geometry(h12['geometry'])
+            geom = Geometry(subH12['geometry'])
 
             # Compute zonal stats for crop cover (if needed)
-            crops = h12['crops']
+            crops = subH12['crops']
             crop_years = {c['year'] for c in crops}
             if cdl_year not in crop_years:
-                total_crop_area, crop_areas = calculate_geography_crop_area(geom, cdl_path, h12['area'])
+                total_crop_area, crop_areas = calculate_geography_crop_area(geom, cdl_path, subH12['area'])
                 logger.debug(f"CDL total crop area: {total_crop_area}")
                 logger.debug(f"CDL individual crop areas: {crop_areas}")
                 crops.append(OrderedDict([
@@ -108,7 +109,7 @@ def main():
                 ]))
 
             # Compute zonal stats for landcover (if needed)
-            developed_area = h12['developedArea']
+            developed_area = subH12['developedArea']
             developed_area_years = {d['year'] for d in developed_area}
             if nlcd_year not in developed_area_years:
                 developed_nlcd_cells, total_nlcd_cells = get_percent_highly_developed_land(geom, nlcd_path)
@@ -118,7 +119,7 @@ def main():
                     developed_proportion = developed_nlcd_cells / total_nlcd_cells
                 developed_area.append(OrderedDict([
                     ('year', nlcd_year),
-                    ('area', h12['area'] * developed_proportion)
+                    ('area', subH12['area'] * developed_proportion)
                 ]))
 
         # Save updated CARMA document (always overwrite because we are updating)
