@@ -16,7 +16,7 @@ from carma_schema.geoconnex.census import County
 from .. common import verify_raw_data, DEFAULT_NLCD_YEAR, DEFAULT_CDL_YEAR, \
     verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
-from .. census import get_county_population, POPULATION_URL_TEMPLATES
+from .. census import query_population_for_counties, POPULATION_URL_TEMPLATES
 from .. nhd import get_geography_stream_characteristics
 from .. crops.cropscape import calculate_geography_crop_area
 from .. nlcd import get_percent_highly_developed_land
@@ -56,36 +56,6 @@ def _parse_county_fips(input_path: str) -> dict:
                 pass
 
     return fips
-
-
-def _query_population_by_county(census_api_key, population_year, fips) -> dict:
-    county_pop = []
-    # First query entire states
-    states = ','.join(s for s in fips['state'])
-    if states != '':
-        county_pop = county_pop + get_county_population(census_api_key, population_year, states)
-    # Next query individual counties.
-    counties_by_state = {}
-    for st_co in fips['state_county']:
-        st = st_co[:2]
-        co = st_co[2:]
-        if st in counties_by_state:
-            counties_by_state[st].append(co)
-        else:
-            counties_by_state[st] = [co]
-    for st in counties_by_state:
-        counties = ','.join(c for c in counties_by_state[st])
-        county_pop = county_pop + get_county_population(census_api_key, population_year, st, counties)
-    # Collate into dict with keys $state_fips+$county_fips
-    pop_by_county = {}
-    for co_pop in county_pop:
-        fq_id = co_pop.state_fips + co_pop.county_fips
-        if fq_id in pop_by_county:
-            pop_by_county[fq_id].append(co_pop)
-        else:
-            pop_by_county[fq_id] = [co_pop]
-
-    return pop_by_county
 
 
 def main():
@@ -200,7 +170,7 @@ def main():
                 carma_counties.append(c)
 
         # Query Census web service for population data
-        pop_by_county = _query_population_by_county(args.census_api_key, args.population_year, fips)
+        pop_by_county = query_population_for_counties(args.census_api_key, args.population_year, fips)
         logger.debug(f"Population by county: {pop_by_county}")
 
         # Do county-by-county processing

@@ -76,7 +76,39 @@ def _deserialize_data_dec(year:int, d:list) -> CountyPopulation:
                             population=d[1])
 
 
-def get_county_population(api_key, year, state_fips, county_fips=None) -> List[CountyPopulation]:
+def query_population_for_counties(census_api_key: str, population_year: int, fips: dict) -> dict:
+    county_pop = []
+    # First query entire states
+    if 'state' in fips:
+        states = ','.join(s for s in fips['state'])
+        if states != '':
+            county_pop = county_pop + get_county_population(census_api_key, population_year, states)
+    # Next query individual counties.
+    counties_by_state = {}
+    if 'state_county' in fips:
+        for st_co in fips['state_county']:
+            st = st_co[:2]
+            co = st_co[2:]
+            if st in counties_by_state:
+                counties_by_state[st].append(co)
+            else:
+                counties_by_state[st] = [co]
+    for st in counties_by_state:
+        counties = ','.join(c for c in counties_by_state[st])
+        county_pop = county_pop + get_county_population(census_api_key, population_year, st, counties)
+    # Collate into dict with keys $state_fips+$county_fips
+    pop_by_county = {}
+    for co_pop in county_pop:
+        fq_id = co_pop.state_fips + co_pop.county_fips
+        if fq_id in pop_by_county:
+            pop_by_county[fq_id].append(co_pop)
+        else:
+            pop_by_county[fq_id] = [co_pop]
+
+    return pop_by_county
+
+
+def get_county_population(api_key: str, year: int, state_fips: str, county_fips: str = None) -> List[CountyPopulation]:
     if year not in POPULATION_URL_TEMPLATES:
         return None
 
