@@ -8,6 +8,8 @@ import shutil
 import uuid
 import math
 
+from tqdm import tqdm
+
 from carma_schema import get_water_use_data_for_county, get_wassi_analysis_by_id
 from carma_schema.types import get_wateruse_dataset_key
 
@@ -69,9 +71,10 @@ def main():
             sys.exit(f"No WaSSI analysis with ID {wassi_id} defined in {abs_carma_inpath}")
 
         # Foreach county disaggregation in WaSSI analysis
-        # TODO: Add progress bar
         huc12_wuds = {}
-        for disag in wassi.countyDisaggregations:
+        progress_bar = tqdm(wassi.countyDisaggregations)
+        for disag in progress_bar:
+            progress_bar.set_description(f"{disag.huc12}:{disag.county}")
             for wud in get_water_use_data_for_county(document, disag.county, wassi.waterUseYear):
                 sector_weights = get_sector_weights(wassi, wud.waterSource, wud.sector)
                 if len(sector_weights) == 0:

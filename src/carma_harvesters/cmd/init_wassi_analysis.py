@@ -59,7 +59,8 @@ def main():
 
         document = open_existing_carma_document(abs_carma_inpath)
 
-        analysis_wassi = AnalysisWaSSI(str(uuid.uuid4()),
+        wassi_id = str(uuid.uuid4())
+        analysis_wassi = AnalysisWaSSI(wassi_id,
                                        args.water_use_year,
                                        args.crop_year,
                                        args.developed_area_year,
@@ -71,6 +72,7 @@ def main():
         write_objects_to_existing_carma_document(analyses, 'Analyses',
                                                  document, abs_carma_inpath,
                                                  temp_out, args.overwrite)
+        print(f"New WaSSI analysis created with ID {wassi_id}")
 
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
