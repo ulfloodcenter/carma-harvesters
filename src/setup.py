@@ -4,7 +4,7 @@ long_description = 'CARMA data harvesters'
 
 setuptools.setup(
     name="carma-harvesters",
-    version="0.4.0",
+    version="0.5.0",
     author="Brian Miles",
     author_email="brian.miles@louisiana.edu",
     description="CARMA harvesters for HUC12, county, & water user data",
@@ -33,6 +33,7 @@ setuptools.setup(
             'carma-subhuc12-update=carma_harvesters.cmd.update_subhuc12_definitions:main',
             'carma-groundwater-well-import=carma_harvesters.cmd.import_groundwater_wells:main',
             'carma-geojson-export=carma_harvesters.cmd.geojson_export:main',
+            'carma-csv-export=carma_harvesters.cmd.csv_export:main',
             'carma-power-plant-wateruse-import=carma_harvesters.cmd.import_usgs_powerplant_wateruse:main',
             'carma-summarize-power-plant-wateruse=carma_harvesters.cmd.summarize_usgs_powerplant_wateruse:main',
             'carma-wassi-init=carma_harvesters.cmd.init_wassi_analysis:main',

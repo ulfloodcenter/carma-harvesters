@@ -1,6 +1,6 @@
 import unittest
 
-from carma_harvesters.analysis.conversion import cfs_to_mgd, mm_per_km2_per_yr_to_mgd
+from carma_harvesters.analysis.conversion import *
 
 class TestConversions(unittest.TestCase):
     def test_cfs_to_mgd(self):
@@ -11,3 +11,12 @@ class TestConversions(unittest.TestCase):
         value_mgd = mm_per_km2_per_yr_to_mgd(160.67391304347825,
                                              57.4878743558)
         self.assertAlmostEqual(6.680643, value_mgd)
+
+    def test_cfs_to_acre_ft_per_yr(self):
+        value_acre_ft_yr = cfs_to_acre_ft_per_yr(154.94)
+        self.assertAlmostEqual(112245.961258, value_acre_ft_yr, places=4)
+
+    def test_mm_per_km2_per_yr_to_acre_ft_per_yr(self):
+        value_acre_ft_yr = mm_per_km2_per_yr_to_acre_ft_per_year(160.67391304347825,
+                                                                 57.4878743558)
+        self.assertAlmostEqual(7488.2432180838, value_acre_ft_yr, places=4)

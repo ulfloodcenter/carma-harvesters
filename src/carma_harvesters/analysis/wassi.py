@@ -63,6 +63,25 @@ def _get_group_sum_value(group_sum: pd.DataFrame, query: str) -> float:
         return 0.0
 
 
+def get_huc12_wateruse_data(document: dict, huc12_id: str, year: int) -> pd.DataFrame:
+    """
+    Fetch water use data for this HUC12 and store in Pandas dataframe for analysis
+    :param document:
+    :param huc12_id:
+    :param year:
+    :return:
+    """
+    huc_wu = pd.DataFrame(columns=['water_source', 'water_type', 'sector', 'is_consumptive', 'value'])
+    for wud in get_water_use_data_for_huc12(document, huc12_id, year):
+        huc_wu = huc_wu.append({'water_source': wud['waterSource'],
+                                'water_type': wud['waterType'],
+                                'sector': wud['sector'],
+                                'is_consumptive': 'consumptive' in wud['description'],
+                                'value': wud['value']},
+                               ignore_index=True)
+    return huc_wu
+
+
 def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, wassi_id: UUID,
                                          env_flow=0.5,
                                          overwrite=False):
@@ -89,15 +108,7 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
             logger.warning(f"HUC12 {huc12_id} does not have recharge data, so WaSSI cannot be calculated.")
             continue
         recharge_mgd = mm_per_km2_per_yr_to_mgd(huc12['recharge'], huc12['area'])
-        # Fetch water use data for this HUC12 and store in Pandas dataframe for analysis
-        huc_wu = pd.DataFrame(columns=['water_source', 'water_type', 'sector', 'is_consumptive', 'value'])
-        for wud in get_water_use_data_for_huc12(document, huc12_id, wassi.waterUseYear):
-            huc_wu = huc_wu.append({'water_source': wud['waterSource'],
-                                    'water_type': wud['waterType'],
-                                    'sector': wud['sector'],
-                                    'is_consumptive': 'consumptive' in wud['description'],
-                                    'value': wud['value']},
-                                   ignore_index=True)
+        huc_wu = get_huc12_wateruse_data(document, huc12_id, wassi.waterUseYear)
         # Calculate terms for WaSSI
         if huc12_id == 'https://geoconnex.us/usgs/hydrologic-unit/080801030404':
             print("080801030404")
