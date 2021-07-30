@@ -10,4 +10,4 @@ class TestConversions(unittest.TestCase):
     def test_mm_per_km2_per_yr_to_mgd(self):
         value_mgd = mm_per_km2_per_yr_to_mgd(160.67391304347825,
                                              57.4878743558)
-        self.assertAlmostEqual(6.685218810, value_mgd)
+        self.assertAlmostEqual(6.680643, value_mgd)
