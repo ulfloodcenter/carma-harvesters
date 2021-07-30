@@ -14,6 +14,14 @@ from .. exception import SchemaValidationException
 from .. common import verify_input, verify_output, open_existing_carma_document, output_json
 
 
+EXPORT_TYPE_ALL = 'all'
+EXPORT_TYPE_HUC12 = 'huc12'
+EXPORT_TYPE_SUBHUC12 = 'subhuc12'
+EXPORT_TYPE_COUNTY = 'county'
+EXPORT_TYPES = [EXPORT_TYPE_ALL, EXPORT_TYPE_HUC12, EXPORT_TYPE_SUBHUC12, EXPORT_TYPE_COUNTY]
+EXPORT_TYPE_DEFAULT = EXPORT_TYPE_ALL
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,6 +37,17 @@ def _entity_to_geojson_feature(entity, entity_type):
     return feature
 
 
+def _entities_to_export(export_type_argument: str) -> (bool, bool, bool):
+    if export_type_argument == EXPORT_TYPE_ALL:
+        return True, True, True
+    elif export_type_argument == EXPORT_TYPE_COUNTY:
+        return True, False, False
+    elif export_type_argument == EXPORT_TYPE_HUC12:
+        return False, True, False
+    elif export_type_argument == EXPORT_TYPE_SUBHUC12:
+        return False, False, True
+
+
 def main():
     parser = argparse.ArgumentParser(description=('Export HUC12, county, and sub-HUC12 definitions from a CARMA data '
                                                   'file into GeoJSON FeatureCollection file.'))
@@ -38,6 +57,8 @@ def main():
     parser.add_argument('-g', '--geojson_out', required=True,
                         help=('Name of file to contain GeoJSON representations of CARMA '
                               'definitions'))
+    parser.add_argument('-e', '--export_entities', required=False, choices=EXPORT_TYPES, default=EXPORT_TYPE_DEFAULT,
+                        help='Type of entities to export.')
     parser.add_argument('-i', '--wassi_id', required=False,
                         help='UUID representing the ID of WaSSI analysis to export HUC12 values for.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
@@ -69,6 +90,8 @@ def main():
         except ValueError as e:
             sys.exit(f"Invalid WaSSI ID {args.wassi_id}.")
 
+    export_county, export_huc12, export_subhuc12 = _entities_to_export(args.export_entities)
+
     try:
         document = open_existing_carma_document(abs_carma_inpath)
 
@@ -89,16 +112,16 @@ def main():
         feature_collection['features'] = features
 
         # Export counties
-        if 'Counties' in document:
+        if export_county and 'Counties' in document:
             [features.append(_entity_to_geojson_feature(e, 'County')) for e in document['Counties']]
         # Export HUC12 watersheds
-        if 'HUC12Watersheds' in document:
+        if export_huc12 and 'HUC12Watersheds' in document:
             if wassi:
                 [features.append(join_wassi_values_to_huc12_geojson(wassi, _entity_to_geojson_feature(e, 'HUC12Watershed'))) for e in document['HUC12Watersheds']]
             else:
                 [features.append(_entity_to_geojson_feature(e, 'HUC12Watershed')) for e in document['HUC12Watersheds']]
         # Export sub-HUC12 watersheds
-        if 'SubHUC12Watersheds' in document:
+        if export_subhuc12 and 'SubHUC12Watersheds' in document:
             [features.append(_entity_to_geojson_feature(e, 'SubHUC12Watershed')) for e in document['SubHUC12Watersheds']]
 
         # Write GeoJSON FeatureCollection
