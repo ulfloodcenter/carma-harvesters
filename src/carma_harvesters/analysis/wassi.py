@@ -7,7 +7,7 @@ import pandas as pd
 
 from carma_schema.types import AnalysisWaSSI, WaterUseDataset, WassiValue, \
     WASSI_SECTOR_ALL, WASSI_SECTOR_IRR, WASSI_SECTOR_IND, WASSI_SECTOR_PUB, WASSI_SECTOR_PWR, WASSI_SECTOR_DOM,\
-    WASSI_SOURCE_ALL, WASSI_SOURCE_SURF, WASSI_SOURCE_GW
+    WASSI_SECTOR_LVS, WASSI_SOURCE_ALL, WASSI_SOURCE_SURF, WASSI_SOURCE_GW
 from carma_schema import CarmaItemNotFound
 from carma_schema import get_water_use_data_for_huc12, get_wassi_analysis_by_id, update_wassi_analysis_instance
 
@@ -53,7 +53,7 @@ def convert_county_wateruse_data_to_huc(county_wu: WaterUseDataset, huc_id, scal
     return huc_wud
 
 
-def _get_group_sum_value(group_sum: pd.DataFrame, query: str) -> float:
+def get_group_sum_value(group_sum: pd.DataFrame, query: str) -> float:
     if group_sum.empty:
         return 0.0
     sum_val = group_sum.query(query)
@@ -110,28 +110,32 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
         recharge_mgd = mm_per_km2_per_yr_to_mgd(huc12['recharge'], huc12['area'])
         huc_wu = get_huc12_wateruse_data(document, huc12_id, wassi.waterUseYear)
         # Calculate terms for WaSSI
-        if huc12_id == 'https://geoconnex.us/usgs/hydrologic-unit/080801030404':
-            print("080801030404")
+        # if huc12_id == 'https://geoconnex.us/usgs/hydrologic-unit/080703000204':
+        #     print("080703000204")
         total_gw_withdrawal = huc_wu.query('is_consumptive == False and water_type != "Any" and water_source == "Groundwater"').sum()['value']
         total_surf_withdrawal = huc_wu.query('is_consumptive == False and water_type != "Any" and water_source == "Surface Water"').sum()['value']
         total_withdrawal = total_gw_withdrawal + total_surf_withdrawal
         grouped = huc_wu.groupby(['sector', 'is_consumptive', 'water_source', 'water_type'])
         group_sum = grouped.sum()
-        domestic_withdrawal = _get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source != "All"')
-        domestic_surf_withdrawal = _get_group_sum_value(group_sum,
+        domestic_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source != "All"')
+        domestic_surf_withdrawal = get_group_sum_value(group_sum,
                                                         'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source == "Surface Water"')
-        industrial_withdrawal = _get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source != "All"')
-        industrial_surf_withdrawal = _get_group_sum_value(group_sum,
-                                                          'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source == "Surface Water"')
-        irigation_withdrawal = _get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Irrigation" and water_type != "Any" and water_source != "All"')
-        irigation_surf_withdrawal = _get_group_sum_value(group_sum,
+        industrial_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source != "All"')
+        industrial_surf_withdrawal = get_group_sum_value(group_sum,
+                                                         'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source == "Surface Water"')
+        irrigation_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Irrigation" and water_type != "Any" and water_source != "All"')
+        irrigation_surf_withdrawal = get_group_sum_value(group_sum,
                                                          'is_consumptive == False and sector == "Irrigation" and water_type != "Any" and water_source == "Surface Water"')
-        public_supply_withdrawal = _get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Public Supply" and water_type != "Any" and water_source != "All"')
-        public_supply_surf_withdrawal = _get_group_sum_value(group_sum,
+        public_supply_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Public Supply" and water_type != "Any" and water_source != "All"')
+        public_supply_surf_withdrawal = get_group_sum_value(group_sum,
                                                              'is_consumptive == False and sector == "Public Supply" and water_type != "Any" and water_source == "Surface Water"')
-        thermo_electric_withdrawal = _get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Total Thermoelectric Power" and water_type != "Any" and water_source != "All"')
-        thermo_electric_surf_withdrawal = _get_group_sum_value(group_sum,
+        thermo_electric_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Total Thermoelectric Power" and water_type != "Any" and water_source != "All"')
+        thermo_electric_surf_withdrawal = get_group_sum_value(group_sum,
                                                                'is_consumptive == False and sector == "Total Thermoelectric Power" and water_type != "Any" and water_source == "Surface Water"')
+        livestock_withdrawal = get_group_sum_value(group_sum,
+                                                   'is_consumptive == False and sector == "Livestock" and water_type != "Any" and water_source != "All"')
+        livestock_surf_withdrawal = get_group_sum_value(group_sum,
+                                                        'is_consumptive == False and sector == "Livestock" and water_type != "Any" and water_source == "Surface Water"')
 
         # Calculate various WaSSI values and store in WassiValue objects
         env_flow_scalar = (1 - env_flow)
@@ -162,8 +166,8 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
                        gw_wassi)
         )
         # Irrigation WaSSI
-        irrigation_wassi = irigation_withdrawal / (
-                env_flow_scalar * (mean_annual_flow_mgd + irigation_surf_withdrawal) + recharge_mgd)
+        irrigation_wassi = irrigation_withdrawal / (
+                env_flow_scalar * (mean_annual_flow_mgd + irrigation_surf_withdrawal) + recharge_mgd)
         wassi_values.append(
             WassiValue(huc12_id,
                        WASSI_SECTOR_IRR,
@@ -205,6 +209,15 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
                        WASSI_SECTOR_DOM,
                        WASSI_SOURCE_ALL,
                        domestic_wassi)
+        )
+        # Livestock WaSSI
+        livestock_wassi = livestock_withdrawal / (
+                env_flow_scalar * (mean_annual_flow_mgd + livestock_surf_withdrawal) + recharge_mgd)
+        wassi_values.append(
+            WassiValue(huc12_id,
+                       WASSI_SECTOR_LVS,
+                       WASSI_SOURCE_ALL,
+                       livestock_wassi)
         )
 
     # Write WaSSI values to AnalysisWaSSI object

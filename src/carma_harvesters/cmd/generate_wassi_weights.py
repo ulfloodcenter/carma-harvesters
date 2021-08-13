@@ -143,9 +143,12 @@ def main():
                 logger.debug(f"Weight W2 (CA) for Sub-HUC12 {sub_huc_id} = {w2[huc12_id]}")
                 sum_w2 += w2[huc12_id]
 
-                w3[huc12_id] = sub_huc12['maxStreamOrder']
+                # Make sure we catch negative stream orders (which can happen in coastal zone),
+                # as the weights cannot be negative.
+                max_strm_ord = max(sub_huc12['maxStreamOrder'], 0)
+                w3[huc12_id] = max_strm_ord
                 # Sum(Max SO) in county so that W3 can later be calculated
-                denom_w3 += sub_huc12['maxStreamOrder']
+                denom_w3 += max_strm_ord
 
                 # Calculate W4 (HD): Highly devel. area in sub-HUC12 / Highly devel. area in county
                 w4[huc12_id] = sub_huc12_devel_area_for_year.area / county_devel_area_for_year.area

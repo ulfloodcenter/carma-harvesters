@@ -14,8 +14,10 @@ SECTORS = ["Public Supply",
            "Livestock (Stock)",
            "Livestock (Animal Specialities)",
            "Aquaculture",
-           "Irrigation, Total",
+           "Irrigation",
+           "Irrigation, Sprinkler"
            "Irrigation, Crop",
+           "Irrigation, Microirrigation"
            "Irrigation, Golf Courses",
            "Hydroelectric Power",
            "Wastewater Treatment"]
@@ -287,7 +289,7 @@ CATEGORY_DESCRIPTORS = {
             "entity_type": "Water",
             "water_source": "Groundwater",
             "water_type": "Saline",
-            "description": "Domestic self-supplied groundwater withdrawals, fresh, in Mgal/d",
+            "description": "Domestic self-supplied groundwater withdrawals, saline, in Mgal/d",
             "unit": {"name": "Mgal/d",
                      "primaryDimension": "Million",
                      "secondaryDimension": "Gallon",
@@ -2679,7 +2681,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total self-supplied groundwater withdrawals, fresh, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "Groundwater",
             "water_type": "Fresh",
@@ -2691,7 +2693,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total self-supplied groundwater withdrawals, saline, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "Groundwater",
             "water_type": "Saline",
@@ -2703,7 +2705,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total total self-supplied withdrawals, groundwater, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "Groundwater",
             "water_type": "Any",
@@ -2715,7 +2717,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total self-supplied surface-water withdrawals, fresh, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "Surface Water",
             "water_type": "Fresh",
@@ -2739,7 +2741,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total self-supplied surface-water withdrawals, saline, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "Surface Water",
             "water_type": "Saline",
@@ -2751,7 +2753,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total total self-supplied withdrawals, surface water, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "Surface Water",
             "water_type": "Any",
@@ -2763,7 +2765,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total total self-supplied withdrawals, fresh, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Fresh",
@@ -2775,7 +2777,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total total self-supplied withdrawals, saline, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Saline",
@@ -2787,7 +2789,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total total self-supplied withdrawals, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Any",
@@ -2799,7 +2801,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total consumptive use, fresh, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Fresh",
@@ -2811,7 +2813,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total consumptive use, saline, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Saline",
@@ -2823,7 +2825,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total total consumptive use, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Any",
@@ -2835,7 +2837,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total conveyance loss, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Any",
@@ -2847,8 +2849,8 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total sprinkler irrigation, in thousand acres":
         {
-            "sector": "Irrigation, Total",
-            "entity_type": "Water",
+            "sector": "Irrigation, Sprinkler",
+            "entity_type": "Land",
             "water_source": "N/A",
             "water_type": "N/A",
             "description": "Irrigation, Total sprinkler irrigation, in thousand acres",
@@ -2858,8 +2860,8 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total microirrigation, in thousand acres":
         {
-            "sector": "Irrigation, Total",
-            "entity_type": "Water",
+            "sector": "Irrigation, Microirrigation",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Total microirrigation, in thousand acres",
@@ -2869,8 +2871,8 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total surface irrigation, in thousand acres":
         {
-            "sector": "Irrigation, Total",
-            "entity_type": "Water",
+            "sector": "Irrigation",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Total surface irrigation, in thousand acres",
@@ -2880,8 +2882,8 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total total irrigation, in thousand acres":
         {
-            "sector": "Irrigation, Total",
-            "entity_type": "Water",
+            "sector": "Irrigation",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Total total irrigation, in thousand acres",
@@ -2891,7 +2893,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Total reclaimed wastewater, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation",
             "entity_type": "Water",
             "water_source": "All",
             "water_type": "Reclaimed",
@@ -2903,7 +2905,7 @@ CATEGORY_DESCRIPTORS = {
         },
     "Irrigation, Crop self-supplied groundwater withdrawals for crops, fresh, in Mgal/d":
         {
-            "sector": "Irrigation, Total",
+            "sector": "Irrigation, Crop",
             "entity_type": "Water",
             "water_source": "Groundwater",
             "water_type": "Fresh",
@@ -2964,7 +2966,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Crop sprinkler irrigation for crops, in thousand acres":
         {
             "sector": "Irrigation, Crop",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Crop sprinkler irrigation for crops, in thousand acres",
@@ -2975,7 +2977,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Crop microirrigation for crops, in thousand acres":
         {
             "sector": "Irrigation, Crop",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Crop microirrigation for crops, in thousand acres",
@@ -2986,7 +2988,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Crop surface irrigation for crops, in thousand acres":
         {
             "sector": "Irrigation, Crop",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Crop surface irrigation for crops, in thousand acres",
@@ -2997,7 +2999,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Crop total irrigation for crops, in thousand acres":
         {
             "sector": "Irrigation, Crop",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Crop total irrigation for crops, in thousand acres",
@@ -3080,7 +3082,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Golf Courses sprinkler irrigation for golf courses, in thousand acres":
         {
             "sector": "Irrigation, Golf Courses",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Golf Courses sprinkler irrigation for golf courses, in thousand acres",
@@ -3091,7 +3093,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Golf Courses microirrigation for golf courses, in thousand acres":
         {
             "sector": "Irrigation, Golf Courses",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Golf Courses microirrigation for golf courses, in thousand acres",
@@ -3102,7 +3104,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Golf Courses surface irrigation for golf courses, in thousand acres":
         {
             "sector": "Irrigation, Golf Courses",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Golf Courses surface irrigation for golf courses, in thousand acres",
@@ -3113,7 +3115,7 @@ CATEGORY_DESCRIPTORS = {
     "Irrigation, Golf Courses total irrigation for golf courses, in thousand acres":
         {
             "sector": "Irrigation, Golf Courses",
-            "entity_type": "Water",
+            "entity_type": "Land",
             "water_source": "All",
             "water_type": "Any",
             "description": "Irrigation, Golf Courses total irrigation for golf courses, in thousand acres",
