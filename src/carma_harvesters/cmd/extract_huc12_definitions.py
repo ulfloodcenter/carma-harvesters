@@ -16,7 +16,7 @@ from carma_schema.geoconnex.usgs import HydrologicUnit
 from .. common import verify_raw_data, DEFAULT_NLCD_YEAR, DEFAULT_CDL_YEAR, \
     verify_input, verify_outpath, output_json
 from .. util import run_ogr2ogr
-from .. nhd import get_huc12_mean_annual_flow, get_huc12_max_stream_order, get_huc12_min_stream_level
+from .. nhd import get_huc12_stream_characteristics
 from .. crops.cropscape import calculate_geography_crop_area
 from .. usgs.recharge import calculate_huc12_mean_recharge
 from .. nlcd import get_percent_highly_developed_land
@@ -119,22 +119,8 @@ def main():
                 # Cache HUC8 streams as their can be many HUC12s in a given HUC8
                 tmp_huc8_streams = os.path.join(temp_out, f"tmp_huc8_{huc8_id}_flowlines.spatialite")
                 where_clause = f"\"reachcode LIKE '{huc8_id}%'\""
-                run_ogr2ogr('-f', 'SQLite', tmp_huc8_streams, data_result['paths']['flowline'], '-where', where_clause)
+                run_ogr2ogr('-f', 'SQLite', '-dsco', 'SPATIALITE=YES', tmp_huc8_streams, data_result['paths']['flowline'], '-where', where_clause)
                 huc8_streams[huc8_id] = tmp_huc8_streams
-
-            # Then extract HUC8 NHDFlowlines that fall within HUC12 boundary (use HUC8 flowlines instead of national data as
-            # this will be much faster).
-            # e.g. ogr2ogr -f SQLite 080403030102_streams.sqlite HUC8_08040303_streams.geojson -clipsrc 080403030102.geojson
-            tmp_huc12_streams = os.path.join(temp_out, f'tmp_huc12_{id}_flowlines.sqlite')
-            run_ogr2ogr('-f', 'SQLite', tmp_huc12_streams, tmp_huc8_streams, '-clipsrc', tmp_huc12_geom)
-
-            # Extract some information from the NHD flowline
-            mean_annual_flow = get_huc12_mean_annual_flow(tmp_huc12_streams)
-            logger.debug(f"Mean annual flow for HUC12 {id} was {mean_annual_flow}")
-            max_stream_order = get_huc12_max_stream_order(tmp_huc12_streams)
-            logger.debug(f"Max stream order for HUC12 {id} was {max_stream_order}")
-            min_stream_level = get_huc12_min_stream_level(tmp_huc12_streams)
-            logger.debug(f"Min stream level for HUC12 {id} was {min_stream_level}")
 
             # Read HUC12 geometry from GeoJSON
             with open(tmp_huc12_geom) as f:
@@ -152,12 +138,20 @@ def main():
             else:
                 h12['description'] = short_id
             h12['area'] = f['properties']['areahuc12']
-            if max_stream_order:
-                h12['maxStreamOrder'] = max_stream_order
-            if min_stream_level:
-                h12['minStreamLevel'] = min_stream_level
-            if mean_annual_flow:
-                h12['meanAnnualFlow'] = mean_annual_flow
+
+            # Calculate stream order, stream level, mean annual flow
+            logger.debug(
+                f"Getting stream characteristics for HUC12 {short_id}. This may take a while...")
+            max_strm_ord, min_strm_lvl, max_mean_ann_flow = \
+                get_huc12_stream_characteristics(f['geometry'], tmp_huc8_streams)
+            logger.debug(
+                f"Stream characteristics: max_strm_ord: {max_strm_ord}, min_strm_lvl: {min_strm_lvl}, max_mean_ann_flow: {max_mean_ann_flow}")
+            if max_strm_ord:
+                h12['maxStreamOrder'] = max_strm_ord
+            if min_strm_lvl:
+                h12['minStreamLevel'] = min_strm_lvl
+            if max_mean_ann_flow:
+                h12['meanAnnualFlow'] = max_mean_ann_flow
 
             # Compute zonal stats for crop cover
             cdl_year, cdl_path = data_result['paths']['cdl']

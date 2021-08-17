@@ -66,7 +66,7 @@ def get_geography_stream_characteristics(geometry: dict, flowline_db: str,
     # Query NHD Flowlines that intersect with the county geometry
     geometry_str = json.dumps(geometry)
     cur.execute(
-        "select max(streamorde), min(streamleve), max(qe_ma) from nhdflowline_network where ST_Intersects(shape, GeomFromGeoJSON(?))",
+        "select max(streamorde), min(streamleve), max(qa_ma) from nhdflowline_network where ST_Intersects(shape, GeomFromGeoJSON(?))",
         (geometry_str,))
     record = cur.fetchone()
     if record[0]:
@@ -79,12 +79,45 @@ def get_geography_stream_characteristics(geometry: dict, flowline_db: str,
         cur.execute(f"create temporary view huc12flow as select * from nhdflowline_network where ST_Intersects(shape, GeomFromGeoJSON('{huc_geometry_str}'))")
         # Select the flowline in the HUC12 boundary nearest to the sub-HUC12 boundary
         cur.execute(
-            "select streamorde, streamleve, qe_ma, min(st_distance(shape, GeomFromGeoJSON(?))) from huc12flow",
+            "select streamorde, streamleve, qa_ma, min(st_distance(shape, GeomFromGeoJSON(?))) from huc12flow",
             (geometry_str,))
         record = cur.fetchone()
         if record[0]:
             max_stream_order, min_stream_level, max_mean_ann_flow, _ = record
         else:
             logger.warning("No stream flowline found in or near sub-HUC12 boundary. This should never happen.")
+
+    return max_stream_order, min_stream_level, max_mean_ann_flow
+
+
+def get_huc12_stream_characteristics(huc_geometry: dict, flowline_db: str) -> (float, float, float):
+    """
+    Query NHD flowlines that intersect a HUC12 geometry, returning the following attributes:
+    max(stream order), min(stream level), and max(mean annual streamflow).
+    :param geometry: A Python object that represents a GeoJSON geometry
+    :param flowline_db: File path to NHDFlowline Spatialite database
+    :return: Tuple consisting of: max(stream order), min(stream level), and max(mean annual streamflow)
+    """
+    max_stream_order = None
+    min_stream_level = None
+    max_mean_ann_flow = None
+
+    conn = sqlite3.connect(flowline_db)
+    # Enable Spatialite extension (so that we can do spatial queries)
+    conn.enable_load_extension(True)
+    conn.execute('SELECT load_extension("mod_spatialite")')
+    conn.enable_load_extension(False)
+    cur = conn.cursor()
+
+    # Query NHD Flowlines that intersect with the county geometry
+    geometry_str = json.dumps(huc_geometry)
+    cur.execute(
+        "select max(streamorde), min(streamleve), max(qa_ma) from nhdflowline_network where ST_Contains(GeomFromGeoJSON(?), shape)",
+        (geometry_str,))
+    record = cur.fetchone()
+    if record[0]:
+        max_stream_order, min_stream_level, max_mean_ann_flow = record
+    else:
+        logger.warning("No stream flowline found in or near HUC12 boundary.")
 
     return max_stream_order, min_stream_level, max_mean_ann_flow
