@@ -26,6 +26,7 @@ setuptools.setup(
         'console_scripts': [
             'carma-huc12-extract=carma_harvesters.cmd.extract_huc12_definitions:main',
             'carma-huc12-update=carma_harvesters.cmd.update_huc12_definitions:main',
+            'carma-huc12-counties-extract=carma_harvesters.cmd.extract_counties_intersecting_huc12_definitions:main',
             'carma-county-extract=carma_harvesters.cmd.extract_county_definitions:main',
             'carma-county-update=carma_harvesters.cmd.update_county_definitions:main',
             'carma-download-nwis-wateruse=carma_harvesters.cmd.download_nwis_water_use:main',

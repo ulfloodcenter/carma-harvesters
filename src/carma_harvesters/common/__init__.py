@@ -3,13 +3,19 @@ import logging
 import tempfile
 import shutil
 import pkg_resources
-from typing import List, Callable
+from typing import List, Callable, TextIO
 import sqlite3
 
 import simplejson as json
 
+from shapely.geometry.base import BaseGeometry
+from shapely.geometry import asShape
+from shapely.geometry.polygon import Polygon
+from shapely.ops import unary_union
+
 import carma_schema
 
+from .. util import Geometry
 from .. exception import SchemaValidationException
 
 
@@ -290,7 +296,31 @@ def write_objects_to_existing_carma_document(objects: List[dict], object_type: s
                                              temp_out: str, overwrite: bool = False):
     logger.debug(f"Starting to write {object_type} to {document_path}...")
     add_objects_to_existing_carma_document(objects, object_type, document, overwrite)
-    # We always pass overwrite=True in to output_json because we collateed JSON data
+    # We always pass overwrite=True in to output_json because we collated JSON data
     # above before outputting.
     output_json(document_path, temp_out, document, overwrite=True)
     logger.debug(f"Finished writing WaterUseDatasets to {document_path}.")
+
+
+def get_geometries_for_entities_in_document(document: dict, entity_key: str) -> List[BaseGeometry]:
+    geoms = []
+    if entity_key in document:
+        for e in document[entity_key]:
+            geoms.append(asShape(Geometry(e['geometry'])))
+    return geoms
+
+
+def dissolve_geometries(geometries: List[dict]) -> Polygon:
+    return unary_union(geometries)
+
+
+def dissolve_huc12_geometries(document: dict) -> Polygon:
+    return dissolve_geometries(get_geometries_for_entities_in_document(document, 'HUC12Watersheds'))
+
+
+def geom_to_shapely(geom: dict) -> BaseGeometry:
+    return asShape(Geometry(geom))
+
+def shapely_to_geojson(geom: BaseGeometry, out_file: TextIO):
+    json.dump(geom.__geo_interface__, out_file)
+    out_file.close()
