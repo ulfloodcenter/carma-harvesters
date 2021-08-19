@@ -154,6 +154,7 @@ def main():
             c['meanAnnualFlow'] = max_mean_ann_flow
 
             # Compute zonal stats for crop cover
+            logger.debug(f"Computing zonal stats for crop cover for county {c['id']}.")
             cdl_year, cdl_path = data_result['paths']['cdl']
             total_crop_area, crop_areas = calculate_geography_crop_area(c['geometry'], cdl_path, c['area'])
             logger.debug(f"CDL total crop area: {total_crop_area}")
@@ -165,6 +166,7 @@ def main():
             ])]
 
             # Compute zonal stats for landcover
+            logger.debug(f"Computing zonal stats for landcover for county {c['id']}.")
             nlcd_year, nlcd_path = data_result['paths']['nlcd']
             developed_nlcd_cells, total_nlcd_cells = get_percent_highly_developed_land(c['geometry'], nlcd_path)
             developed_proportion = developed_nlcd_cells / total_nlcd_cells
