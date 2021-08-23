@@ -1,7 +1,7 @@
 import json
 import re
 from datetime import datetime
-from typing import List
+from typing import List, Callable
 
 from shapely.geometry.base import BaseGeometry
 
@@ -33,8 +33,10 @@ def _generate_four_digit_year(year: str) -> int:
 
 
 class WellAttributeMapper:
-    def __init__(self, mapper_config_path: str, wells_inpath: str):
+    def __init__(self, mapper_config_path: str, wells_inpath: str,
+                 get_wells: Callable[[str, BaseGeometry], dict] = select_points_contained_by_geometry):
         self.wells_inpath = wells_inpath
+        self.get_wells = get_wells
         with open(mapper_config_path, 'r') as f:
             self.config = json.load(f)
 
@@ -52,20 +54,24 @@ class WellAttributeMapper:
                 continue
             if carma_property == YEAR_COMPLETED_ATTR:
                 # Value entry will be a list of patterns
-                for mapping in self.config['values'][native_property]:
+                for mapping in self.config['values'][carma_property][native_property]:
                     if isinstance(mapping, dict):
                         if native_value in mapping:
                             carma_value = _generate_four_digit_year(mapping[native_value])
                             break
                     elif isinstance(mapping, str):
-                        m = re.match(mapping, native_value)
-                        if m:
-                            carma_value = _generate_four_digit_year(m.group('year'))
+                        if isinstance(native_value, float):
+                            carma_value = _generate_four_digit_year(str(int(native_value)))
                             break
+                        elif isinstance(native_value, str):
+                            m = re.match(mapping, native_value)
+                            if m:
+                                carma_value = _generate_four_digit_year(m.group('year'))
+                                break
             else:
                 # Value entry will be dictionary whose keys are patterns to be used to attempt to classify inputs into
                 # a valid CARMA, which is specified by the value of the key. Try to match one of these patterns
-                value_mapping = self.config['values'][native_property]
+                value_mapping = self.config['values'][carma_property][native_property]
                 for pattern, tmp_carma_value in value_mapping.items():
                     m = re.match(pattern, native_value)
                     if m:
@@ -82,7 +88,7 @@ class WellAttributeMapper:
 
         # Read well data from data file
         well_data = pd.DataFrame(columns=('sector', 'status', 'yearCompleted'))
-        wells = select_points_contained_by_geometry(self.wells_inpath, geom)
+        wells = self.get_wells(self.wells_inpath, geom)
         for i, well in enumerate(wells['features']):
             carma_attr = self.map_well_attributes(well['properties'])
             well_data = well_data.append(carma_attr, ignore_index=True)
