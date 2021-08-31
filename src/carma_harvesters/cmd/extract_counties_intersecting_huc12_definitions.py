@@ -102,7 +102,6 @@ def main():
         fips_stco = []
         fips = {'state_county': fips_stco}
 
-        # counties = fiona.open(counties_for_huc12_path, 'r')
         with open(counties_for_huc12_path, 'r') as f:
             counties = json.load(f)
 

@@ -70,6 +70,9 @@ def main():
         if wassi is None:
             sys.exit(f"No WaSSI analysis with ID {wassi_id} defined in {abs_carma_inpath}")
 
+        if wassi.countyDisaggregations is None:
+            sys.exit(f"No county disaggregations in WaSSI analysis with ID {wassi_id} defined in {abs_carma_inpath}")
+
         # Foreach county disaggregation in WaSSI analysis
         huc12_wuds = {}
         progress_bar = tqdm(wassi.countyDisaggregations)

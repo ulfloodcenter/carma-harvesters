@@ -39,7 +39,7 @@ def main():
     if args.verbose:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     else:
-        logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+        logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
 
     abs_carma_inpath = os.path.abspath(args.carma_inpath)
     success, input_result = verify_input(abs_carma_inpath)
@@ -90,8 +90,8 @@ def main():
             # 3. Get county groundwater well counts for specified year, report error if none
             county_wells_for_year = get_well_counts_for_entity(county, wassi.groundwaterWellsCompletedYear)
             if len(county_wells_for_year) == 0:
-                sys.exit(f"County {county['id']} does not have groundwater well counts for "
-                         f"year {wassi.groundwaterWellsCompletedYear}.")
+                logger.warning(f"County {county['id']} does not have groundwater well counts for "
+                               f"year {wassi.groundwaterWellsCompletedYear}.")
             county_well_counts = {}
             for wc in county_wells_for_year:
                 if wc.status == 'Active':
@@ -158,7 +158,10 @@ def main():
                 # Calculate GW1: number of groundwater wells in sub-HUC12 / number of groundwater wells in county
                 sub_huc12_gw1 = GroundwaterWeightWaSSI()
                 for sector, sub_huc12_count in sub_huc12_well_counts.items():
-                    sub_huc12_gw1[sector] = sub_huc12_count / county_well_counts[sector]
+                    if sector not in county_well_counts or county_well_counts[sector] == 0:
+                        sub_huc12_gw1[sector] = 0.0
+                    else:
+                        sub_huc12_gw1[sector] = sub_huc12_count / county_well_counts[sector]
                 gw1[huc12_id] = sub_huc12_gw1
                 sum_gw1.accum(sub_huc12_gw1)
 
