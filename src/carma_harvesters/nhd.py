@@ -66,7 +66,7 @@ def get_geography_stream_characteristics(geometry: dict, flowline_db: str,
     # Query NHD Flowlines that intersect with the county geometry
     geometry_str = json.dumps(geometry)
     cur.execute(
-        "select max(streamorde), min(streamleve), max(qa_ma) from nhdflowline_network where ST_Contains(GeomFromGeoJSON(?), shape)",
+        "select max(streamorde), min(streamleve), max(qe_ma) from nhdflowline_network where ST_Contains(GeomFromGeoJSON(?), shape)",
         (geometry_str,))
     record = cur.fetchone()
     if record[0]:
@@ -79,7 +79,7 @@ def get_geography_stream_characteristics(geometry: dict, flowline_db: str,
         cur.execute(f"create temporary view huc12flow as select * from nhdflowline_network where ST_Contains(GeomFromGeoJSON('{huc_geometry_str}'), shape)")
         # Select the flowline in the HUC12 boundary nearest to the sub-HUC12 boundary
         cur.execute(
-            "select streamorde, streamleve, qa_ma, min(st_distance(shape, GeomFromGeoJSON(?))) from huc12flow",
+            "select streamorde, streamleve, qe_ma, min(st_distance(shape, GeomFromGeoJSON(?))) from huc12flow",
             (geometry_str,))
         record = cur.fetchone()
         if record[0]:
@@ -112,7 +112,7 @@ def get_huc12_stream_characteristics(huc_geometry: dict, flowline_db: str) -> (f
     # Query NHD Flowlines that intersect with the county geometry
     geometry_str = json.dumps(huc_geometry)
     cur.execute(
-        "select max(streamorde), min(streamleve), max(qa_ma) from nhdflowline_network where ST_Contains(GeomFromGeoJSON(?), shape)",
+        "select max(streamorde), min(streamleve), max(qe_ma) from nhdflowline_network where ST_Contains(GeomFromGeoJSON(?), shape)",
         (geometry_str,))
     record = cur.fetchone()
     if record[0]:

@@ -1,11 +1,13 @@
-from typing import List
+from typing import List, Set
 import copy
 from uuid import UUID
+from dataclasses import dataclass
 import logging
 
 import pandas as pd
 
-from carma_schema.types import AnalysisWaSSI, WaterUseDataset, WassiValue, \
+from carma_schema.types import AnalysisWaSSI, WaterUseDataset, CountyDisaggregationWaSSI,\
+    WassiValue, \
     WASSI_SECTOR_ALL, WASSI_SECTOR_IRR, WASSI_SECTOR_IND, WASSI_SECTOR_PUB, WASSI_SECTOR_PWR, WASSI_SECTOR_DOM,\
     WASSI_SECTOR_LVS, WASSI_SOURCE_ALL, WASSI_SOURCE_SURF, WASSI_SOURCE_GW
 from carma_schema import CarmaItemNotFound
@@ -27,6 +29,40 @@ SECTOR_VALUE_TO_PROPERTY_NAME = {
 }
 
 GW_WEIGHT_KEY = 'gw1'
+
+
+@dataclass
+class HUC12Weight:
+    huc12: str
+    weight: float
+
+
+@dataclass
+class WeightDescriptor:
+    county: str
+    source: str
+    sector: str
+    huc12_weights: List[HUC12Weight]
+    sum_weights: float
+
+
+@dataclass
+class SourceSector:
+    source: str
+    sector: str
+
+
+def get_weight_descriptor_key(county: str, source: str, sector: str) -> str:
+    return county + ':' + source + ':' + sector
+
+
+def enumerate_source_sectors(wassi: AnalysisWaSSI) -> List[SourceSector]:
+    source_sectors = []
+    for sector_weights in wassi.sectorWeightFactorsSurface:
+        source_sectors.append(SourceSector(WASSI_SOURCE_SURF, sector_weights.sector))
+    for sector_weights in wassi.sectorWeightFactorsGroundwater:
+        source_sectors.append(SourceSector(WASSI_SOURCE_GW, sector_weights.sector))
+    return source_sectors
 
 
 def get_sector_weights(wassi: AnalysisWaSSI, source: str, sector: str) -> List[str]:
@@ -109,9 +145,6 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
             continue
         recharge_mgd = mm_per_km2_per_yr_to_mgd(huc12['recharge'], huc12['area'])
         huc_wu = get_huc12_wateruse_data(document, huc12_id, wassi.waterUseYear)
-        # Calculate terms for WaSSI
-        # if huc12_id == 'https://geoconnex.us/usgs/hydrologic-unit/080703000204':
-        #     print("080703000204")
         total_gw_withdrawal = huc_wu.query('is_consumptive == False and water_type != "Any" and water_source == "Groundwater"').sum()['value']
         total_surf_withdrawal = huc_wu.query('is_consumptive == False and water_type != "Any" and water_source == "Surface Water"').sum()['value']
         total_withdrawal = total_gw_withdrawal + total_surf_withdrawal
@@ -227,3 +260,18 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
         wassi.wassiValues = wassi.wassiValues + wassi_values
 
     update_wassi_analysis_instance(document, wassi)
+
+
+def get_county_ids_in_county_disaggregations(wassi: AnalysisWaSSI) -> Set[str]:
+    county_ids = set()
+    for cd in wassi.countyDisaggregations:
+        county_ids.add(cd.county)
+    return county_ids
+
+
+def get_county_disaggregations_for_county(wassi: AnalysisWaSSI, county: str) -> List[CountyDisaggregationWaSSI]:
+    disags = []
+    for cd in wassi.countyDisaggregations:
+        if cd.county == county:
+            disags.append(cd)
+    return disags

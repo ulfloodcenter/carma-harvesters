@@ -8,7 +8,7 @@ RUN mkdir /tmp/code
 ADD ./src /tmp/code/
 WORKDIR /tmp/code
 
-# Install CARMA depdendencies
+# Install CARMA dependencies
 RUN apt-get update -y \
     && apt-get install -y build-essential python3-pip p7zip-full \
         gdal-bin libgdal-dev python3-gdal sqlite3 libsqlite3-mod-spatialite \
