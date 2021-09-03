@@ -190,3 +190,48 @@ where:
 
 * API documentation: https://api.census.gov/data.html
 * Get API key here: https://api.census.gov/data/key_signup.html
+
+## Dev environment setup
+
+### macOS (Homebrew)
+
+Install OS dependencies
+```
+brew update
+brew install python numpy gdal spatialite-tools proj
+```
+
+Setup Python
+```
+python3 -m venv venv
+source venv/bin/activate
+```
+
+If running on AppleSilicon, do this afterwards:
+```
+pip install Cython
+pip install --no-binary :all: --no-use-pep517 numpy
+pip install --no-deps pygeos
+pip install git+https://github.com/Toblerity/Fiona#egg=fiona
+```
+
+Install CARMA Python dependencies (unless using AppleSilicon)
+```
+cd src
+pip install -r requirements.txt
+```
+
+Install CARMA Python dependencies (ONLY if using AppleSilicon)
+```
+cd src
+pip install -r requirements-aarch64.txt
+```
+
+Install CARMA
+```
+carma-schema
+python setup.py install
+cd ..
+python setup.py install
+```
+
