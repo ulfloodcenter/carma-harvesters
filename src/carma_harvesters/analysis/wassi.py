@@ -25,7 +25,8 @@ SECTOR_VALUE_TO_PROPERTY_NAME = {
     'Industrial': 'industrial',
     'Power Generation': 'powerGeneration',
     'Irrigation': 'irrigation',
-    'Livestock': 'livestock'
+    'Livestock': 'livestock',
+    'Mining': 'mining'
 }
 
 GW_WEIGHT_KEY = 'gw1'
@@ -153,9 +154,9 @@ def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, 
         domestic_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source != "All"')
         domestic_surf_withdrawal = get_group_sum_value(group_sum,
                                                         'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source == "Surface Water"')
-        industrial_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source != "All"')
+        industrial_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and (sector == "Industrial" or sector == "Mining") and water_type != "Any" and water_source != "All"')
         industrial_surf_withdrawal = get_group_sum_value(group_sum,
-                                                         'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source == "Surface Water"')
+                                                         'is_consumptive == False and (sector == "Industrial" or sector == "Mining") and water_type != "Any" and water_source == "Surface Water"')
         irrigation_withdrawal = get_group_sum_value(group_sum, 'is_consumptive == False and sector == "Irrigation" and water_type != "Any" and water_source != "All"')
         irrigation_surf_withdrawal = get_group_sum_value(group_sum,
                                                          'is_consumptive == False and sector == "Irrigation" and water_type != "Any" and water_source == "Surface Water"')

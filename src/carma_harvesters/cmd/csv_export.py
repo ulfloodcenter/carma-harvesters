@@ -45,8 +45,12 @@ def main():
     parser.add_argument('-i', '--wassi_id', required=True,
                         help='UUID representing the ID of WaSSI analysis to export HUC12 values for.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
+    parser.add_argument('--debug', help='Debug mode: do not delete output if there is an exception',
+                        action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
+
+    temp_out = None
 
     if args.verbose:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -72,6 +76,8 @@ def main():
             wassi_id = uuid.UUID(args.wassi_id)
         except ValueError as e:
             sys.exit(f"Invalid WaSSI ID {args.wassi_id}.")
+
+    error = False
 
     try:
         document = open_existing_carma_document(abs_carma_inpath)
@@ -101,7 +107,7 @@ def main():
                            'Power_Generation_GW_(Acres.Feet/Year)', 'Public_Supply_GW_(Acres.Feet/Year)',
                            'Livestock_GW_(Acres.Feet/Year)', 'Rural_Domestic_GW_(Acres.Feet/Year)',
                            'Total_GW_Use_(MGD)', 'Total_GW_Use_(Acres.Feet/Year)', 'Withdrawal', 'Available',
-                           'Stress', 'Balance']
+                           'Stress', 'Balance', 'SW_Stress']
             writer = csv.DictWriter(csvfile, fieldnames=field_names)
             writer.writeheader()
 
@@ -167,7 +173,7 @@ def main():
                     row['Irrigation_GW_(Acres.Feet/Year)'] = mgd_to_acre_ft_per_year(irrigation_gw_withdrawal)
 
                     industrial_gw_withdrawal = get_group_sum_value(group_sum,
-                                                                   'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source == "Groundwater"')
+                                                                   'is_consumptive == False and (sector == "Industrial" or sector == "Mining") and water_type != "Any" and water_source == "Groundwater"')
                     row['Industrial_GW'] = industrial_gw_withdrawal
                     row['Industrial_GW_(Acres.Feet/Year)'] = mgd_to_acre_ft_per_year(industrial_gw_withdrawal)
 
@@ -190,10 +196,6 @@ def main():
                                                                        'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source == "Groundwater"')
                     row['Rural_Domestic_GW'] = rural_domestic_gw_withdrawal
                     row['Rural_Domestic_GW_(Acres.Feet/Year)'] = mgd_to_acre_ft_per_year(rural_domestic_gw_withdrawal)
-                    # Debug
-                    # rural_domestic_withdrawal_allsource = get_group_sum_value(group_sum,
-                    #                                                           'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source != "All"')
-                    # row['DEBUG_Rural_Domestic_AllSource'] = rural_domestic_withdrawal_allsource
 
                     # Sum groundwater
                     row['Total_GW_Use_(MGD)'] = irrigation_gw_withdrawal + industrial_gw_withdrawal + \
@@ -214,21 +216,32 @@ def main():
                     else:
                         row['Stress'] = 0.0
                     row['Balance'] = row['Available'] - row['Withdrawal']
+                    if 'wassi_sector_All_source_SurfaceWater' in h12_wassi:
+                        row['SW_Stress'] = h12_wassi['wassi_sector_All_source_SurfaceWater']
+                    else:
+                        row['SW_Stress'] = 0.0
 
                     writer.writerow(row)
 
     except KeyError as ke:
         logger.error(traceback.format_exc())
         logger.error(f"Datum was: {h12}")
+        error = True
         sys.exit(ke)
     except CarmaItemNotFound as cinf:
         logger.error(traceback.format_exc())
+        error = True
         sys.exit(cinf)
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
+        error = True
         sys.exit(e)
     except Exception as e:
         logger.error(traceback.format_exc())
+        error = True
         sys.exit(e)
     finally:
-        shutil.rmtree(temp_out)
+        if error and args.debug:
+            pass
+        elif temp_out:
+            shutil.rmtree(temp_out)

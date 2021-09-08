@@ -4,7 +4,7 @@ long_description = 'CARMA data harvesters'
 
 setuptools.setup(
     name="carma-harvesters",
-    version="0.5.0",
+    version="0.6.0",
     author="Brian Miles",
     author_email="brian.miles@louisiana.edu",
     description="CARMA harvesters for HUC12, county, & water user data",

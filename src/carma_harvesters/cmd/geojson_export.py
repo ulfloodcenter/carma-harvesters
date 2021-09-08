@@ -62,6 +62,8 @@ def main():
     parser.add_argument('-i', '--wassi_id', required=False,
                         help='UUID representing the ID of WaSSI analysis to export HUC12 values for.')
     parser.add_argument('-v', '--verbose', help='Produce verbose output', action='store_true', default=False)
+    parser.add_argument('--debug', help='Debug mode: do not delete output if there is an exception',
+                        action='store_true', default=False)
     parser.add_argument('--overwrite', action='store_true', help='Overwrite output', default=False)
     args = parser.parse_args()
 
@@ -91,6 +93,8 @@ def main():
             sys.exit(f"Invalid WaSSI ID {args.wassi_id}.")
 
     export_county, export_huc12, export_subhuc12 = _entities_to_export(args.export_entities)
+
+    error = False
 
     try:
         document = open_existing_carma_document(abs_carma_inpath)
@@ -130,12 +134,18 @@ def main():
 
     except CarmaItemNotFound as cinf:
         logger.error(traceback.format_exc())
+        error = True
         sys.exit(cinf)
     except SchemaValidationException as e:
         logger.error(traceback.format_exc())
+        error = True
         sys.exit(e)
     except Exception as e:
         logger.error(traceback.format_exc())
+        error = True
         sys.exit(e)
     finally:
-        shutil.rmtree(temp_out)
+        if error and args.debug:
+            pass
+        else:
+            shutil.rmtree(temp_out)

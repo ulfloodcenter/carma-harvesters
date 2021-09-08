@@ -136,7 +136,8 @@ def main():
                                                      exclude_summary_data=True):
                 disag_weight_key = get_weight_descriptor_key(county, wud.waterSource, wud.sector)
                 if disag_weight_key not in disag_weights:
-                    # We don't have weights for this dataset; it's probably a summary with water source 'All', etc.
+                    # We don't have weights for this dataset; it's probably a summary with water source 'All', or
+                    # for a sector that we don't care about, etc.
                     continue
                 disag_weight = disag_weights[disag_weight_key]
 

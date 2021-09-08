@@ -7,6 +7,8 @@ import traceback
 import shutil
 import uuid
 
+from tqdm import tqdm
+
 from carma_schema import get_crop_data_for_entity, get_developed_area_data_for_entity, get_well_counts_for_entity, \
     get_wassi_analysis_by_id, update_wassi_analysis_instance
 from carma_schema.util import get_sub_huc12_id
@@ -75,9 +77,10 @@ def main():
         analysis_wassi_entries = []
 
         # Foreach county...
-        # TODO: Add progress bar
-        for county in document['Counties']:
-            logger.debug(f"Calculating weights for HUC12s in county {county['id']}")
+        progress_bar = tqdm(document['Counties'])
+        for county in progress_bar:
+            mesg = f"Calculating weights for HUC12s in county {county['id']}"
+            progress_bar.set_description(mesg)
             # 1. Find county crop area for specified year, report error if none
             county_crops_for_year = get_crop_data_for_entity(county, wassi.cropYear)
             if county_crops_for_year is None:
@@ -168,7 +171,10 @@ def main():
             # Now calculate w3 for each sub-HUC12
             sum_w3 = 0.0
             for huc12_id in w3:
-                w3[huc12_id] = w3[huc12_id] / denom_w3
+                if denom_w3 == 0.0:
+                    w3[huc12_id]
+                else:
+                    w3[huc12_id] = w3[huc12_id] / denom_w3
                 logger.debug(f"Weight W3 (SO) for Sub-HUC12 {huc12_id} = {w3[huc12_id]}")
                 sum_w3 += w3[huc12_id]
 
