@@ -4,15 +4,14 @@ from uuid import UUID
 from dataclasses import dataclass
 import logging
 
-import pandas as pd
-
 from carma_schema.types import AnalysisWaSSI, WaterUseDataset, CountyDisaggregationWaSSI,\
     WassiValue, \
     WASSI_SECTOR_ALL, WASSI_SECTOR_IRR, WASSI_SECTOR_IND, WASSI_SECTOR_PUB, WASSI_SECTOR_PWR, WASSI_SECTOR_DOM,\
     WASSI_SECTOR_LVS, WASSI_SOURCE_ALL, WASSI_SOURCE_SURF, WASSI_SOURCE_GW
 from carma_schema import CarmaItemNotFound
-from carma_schema import get_water_use_data_for_huc12, get_wassi_analysis_by_id, update_wassi_analysis_instance
+from carma_schema import get_wassi_analysis_by_id, update_wassi_analysis_instance
 
+from carma_harvesters.common import get_huc12_wateruse_data, get_group_sum_value
 from carma_harvesters.analysis.conversion import cfs_to_mgd, mm_per_km2_per_yr_to_mgd
 
 
@@ -88,35 +87,6 @@ def convert_county_wateruse_data_to_huc(county_wu: WaterUseDataset, huc_id, scal
     huc_wud.huc12 = huc_id
     huc_wud.value *= scalar
     return huc_wud
-
-
-def get_group_sum_value(group_sum: pd.DataFrame, query: str) -> float:
-    if group_sum.empty:
-        return 0.0
-    sum_val = group_sum.query(query)
-    if len(sum_val) >= 1:
-        return float(sum_val.sum())
-    else:
-        return 0.0
-
-
-def get_huc12_wateruse_data(document: dict, huc12_id: str, year: int) -> pd.DataFrame:
-    """
-    Fetch water use data for this HUC12 and store in Pandas dataframe for analysis
-    :param document:
-    :param huc12_id:
-    :param year:
-    :return:
-    """
-    huc_wu = pd.DataFrame(columns=['water_source', 'water_type', 'sector', 'is_consumptive', 'value'])
-    for wud in get_water_use_data_for_huc12(document, huc12_id, year):
-        huc_wu = huc_wu.append({'water_source': wud['waterSource'],
-                                'water_type': wud['waterType'],
-                                'sector': wud['sector'],
-                                'is_consumptive': 'consumptive' in wud['description'],
-                                'value': wud['value']},
-                               ignore_index=True)
-    return huc_wu
 
 
 def calculate_wassi_for_huc12_watersheds(abs_carma_inpath: str, document: dict, wassi_id: UUID,

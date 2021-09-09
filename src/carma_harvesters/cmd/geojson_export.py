@@ -11,7 +11,8 @@ import uuid
 from carma_schema import CarmaItemNotFound, get_wassi_analysis_by_id, join_wassi_values_to_huc12_geojson
 
 from .. exception import SchemaValidationException
-from .. common import verify_input, verify_output, open_existing_carma_document, output_json
+from .. common import verify_input, verify_output, open_existing_carma_document, output_json, \
+    join_wateruse_data_to_huc12_geojson
 
 
 EXPORT_TYPE_ALL = 'all'
@@ -121,7 +122,7 @@ def main():
         # Export HUC12 watersheds
         if export_huc12 and 'HUC12Watersheds' in document:
             if wassi:
-                [features.append(join_wassi_values_to_huc12_geojson(wassi, _entity_to_geojson_feature(e, 'HUC12Watershed'))) for e in document['HUC12Watersheds']]
+                [features.append(join_wateruse_data_to_huc12_geojson(document, join_wassi_values_to_huc12_geojson(wassi, _entity_to_geojson_feature(e, 'HUC12Watershed')), wassi.waterUseYear)) for e in document['HUC12Watersheds']]
             else:
                 [features.append(_entity_to_geojson_feature(e, 'HUC12Watershed')) for e in document['HUC12Watersheds']]
         # Export sub-HUC12 watersheds

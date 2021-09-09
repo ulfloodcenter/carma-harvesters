@@ -13,9 +13,9 @@ from carma_schema import CarmaItemNotFound, get_wassi_analysis_by_id, join_wassi
 from carma_schema.geoconnex.usgs import HydrologicUnit
 
 from .. analysis.conversion import *
-from .. analysis.wassi import get_huc12_wateruse_data, get_group_sum_value
+from .. analysis.wassi import get_group_sum_value
 from .. exception import SchemaValidationException
-from .. common import verify_input, verify_output, open_existing_carma_document
+from .. common import verify_input, verify_output, open_existing_carma_document, get_huc12_wateruse_data
 
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,7 @@ def main():
                     row['Irrigation_SW_(Acres.Feet/Year)'] = mgd_to_acre_ft_per_year(irrigation_surf_withdrawal)
 
                     industrial_surf_withdrawal = get_group_sum_value(group_sum,
-                                                                     'is_consumptive == False and sector == "Industrial" and water_type != "Any" and water_source == "Surface Water"')
+                                                                     'is_consumptive == False and (sector == "Industrial" or sector == "Mining") and water_type != "Any" and water_source == "Surface Water"')
                     row['Industrial_SW'] = industrial_surf_withdrawal
                     row['Industrial_SW_(Acres.Feet/Year)'] = mgd_to_acre_ft_per_year(industrial_surf_withdrawal)
 

@@ -13,7 +13,11 @@ from shapely.geometry import asShape
 from shapely.geometry.polygon import Polygon
 from shapely.ops import unary_union
 
+import pandas as pd
+
 import carma_schema
+from carma_schema import get_water_use_data_for_huc12
+from carma_schema.types import AnalysisWaSSI
 
 from .. util import Geometry
 from .. exception import SchemaValidationException
@@ -321,6 +325,84 @@ def dissolve_huc12_geometries(document: dict) -> Polygon:
 def geom_to_shapely(geom: dict) -> BaseGeometry:
     return asShape(Geometry(geom))
 
+
 def shapely_to_geojson(geom: BaseGeometry, out_file: TextIO):
     json.dump(geom.__geo_interface__, out_file)
     out_file.close()
+
+
+def get_huc12_wateruse_data(document: dict, huc12_id: str, year: int) -> pd.DataFrame:
+    """
+    Fetch water use data for this HUC12 and store in Pandas dataframe for analysis
+    :param document:
+    :param huc12_id:
+    :param year:
+    :return:
+    """
+    huc_wu = pd.DataFrame(columns=['water_source', 'water_type', 'sector', 'is_consumptive', 'value'])
+    for wud in get_water_use_data_for_huc12(document, huc12_id, year):
+        huc_wu = huc_wu.append({'water_source': wud['waterSource'],
+                                'water_type': wud['waterType'],
+                                'sector': wud['sector'],
+                                'is_consumptive': 'consumptive' in wud['description'],
+                                'value': wud['value']},
+                               ignore_index=True)
+    return huc_wu
+
+
+def get_group_sum_value(group_sum: pd.DataFrame, query: str) -> float:
+    if group_sum.empty:
+        return 0.0
+    sum_val = group_sum.query(query)
+    if len(sum_val) >= 1:
+        return float(sum_val.sum())
+    else:
+        return 0.0
+
+
+def join_wateruse_data_to_huc12_geojson(document: dict, huc12_geojson: dict, year: int) -> dict:
+    p = huc12_geojson['properties']
+    huc_wu = get_huc12_wateruse_data(document, p['id'], year)
+
+    grouped = huc_wu.groupby(['sector', 'is_consumptive', 'water_source', 'water_type'])
+    group_sum = grouped.sum()
+    # Surface water
+    irrigation_surf_withdrawal = get_group_sum_value(group_sum,
+                                                     'is_consumptive == False and sector == "Irrigation" and water_type != "Any" and water_source == "Surface Water"')
+    p['irrigation_sw_mgd'] = irrigation_surf_withdrawal
+    industrial_surf_withdrawal = get_group_sum_value(group_sum,
+                                                     'is_consumptive == False and (sector == "Industrial" or sector == "Mining") and water_type != "Any" and water_source == "Surface Water"')
+    p['industrial_sw_mgd'] = industrial_surf_withdrawal
+    thermo_electric_surf_withdrawal = get_group_sum_value(group_sum,
+                                                          'is_consumptive == False and sector == "Total Thermoelectric Power" and water_type != "Any" and water_source == "Surface Water"')
+    p['power_generation_sw_mgd'] =  thermo_electric_surf_withdrawal
+    public_supply_surf_withdrawal = get_group_sum_value(group_sum,
+                                                        'is_consumptive == False and sector == "Public Supply" and water_type != "Any" and water_source == "Surface Water"')
+    p['public_sector_sw_mgd'] = public_supply_surf_withdrawal
+    p['total_sw_use_mgd'] = irrigation_surf_withdrawal + industrial_surf_withdrawal + \
+                            thermo_electric_surf_withdrawal + public_supply_surf_withdrawal
+    # Groundwater
+    irrigation_gw_withdrawal = get_group_sum_value(group_sum,
+                                                   'is_consumptive == False and sector == "Irrigation" and water_type != "Any" and water_source == "Groundwater"')
+    p['irrigation_gw_mgd'] = irrigation_gw_withdrawal
+    industrial_gw_withdrawal = get_group_sum_value(group_sum,
+                                                   'is_consumptive == False and (sector == "Industrial" or sector == "Mining") and water_type != "Any" and water_source == "Groundwater"')
+    p['industrial_gw_mgd'] = industrial_gw_withdrawal
+    thermo_electric_gw_withdrawal = get_group_sum_value(group_sum,
+                                                        'is_consumptive == False and sector == "Total Thermoelectric Power" and water_type != "Any" and water_source == "Groundwater"')
+    p['power_generation_gw_mgd'] = thermo_electric_gw_withdrawal
+    public_supply_gw_withdrawal = get_group_sum_value(group_sum,
+                                                      'is_consumptive == False and sector == "Public Supply" and water_type != "Any" and water_source == "Groundwater"')
+    p['public_supply_gw_mgd'] = public_supply_gw_withdrawal
+    livestock_gw_withdrawal = get_group_sum_value(group_sum,
+                                                  'is_consumptive == False and sector == "Livestock" and water_type != "Any" and water_source == "Groundwater"')
+    p['livestock_gw_mgd'] = livestock_gw_withdrawal
+    rural_domestic_gw_withdrawal = get_group_sum_value(group_sum,
+                                                       'is_consumptive == False and sector == "Domestic" and water_type != "Any" and water_source == "Groundwater"')
+    p['rural_domestic_gw_mgd'] = rural_domestic_gw_withdrawal
+    p['total_gw_use_mgd'] = irrigation_gw_withdrawal + industrial_gw_withdrawal + \
+                            thermo_electric_gw_withdrawal + public_supply_gw_withdrawal + \
+                            livestock_gw_withdrawal + rural_domestic_gw_withdrawal
+    p['total_use_withdrawal_mgd'] = p['total_sw_use_mgd'] + p['total_gw_use_mgd']
+
+    return huc12_geojson
