@@ -5,7 +5,7 @@ wget https://s3.amazonaws.com/edap-nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV
   https://s3-us-west-2.amazonaws.com/mrlc/NLCD_2016_Land_Cover_L48_20190424.zip \
   https://s3-us-west-2.amazonaws.com/mrlc/nlcd_2011_land_cover_l48_20210604.zip \
   https://prd-tnm.s3.amazonaws.com/StagedProducts/GovtUnit/National/GDB/GovernmentUnits_National_GDB.zip \
-  ftp://ftp.nass.usda.gov/download/res/2019_30m_cdls.zip \
+  ftp://ftp.nass.usda.gov/download/res/2020_30m_cdls.zip \
   ftp://ftp.nass.usda.gov/download/res/2010_30m_cdls.zip \
   ftp://ftp.nass.usda.gov/download/res/2015_30m_cdls.zip \
   https://water.usgs.gov/GIS/dsdl/rech48grd.tgz \
@@ -26,7 +26,7 @@ gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vs
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/nlcd_2011_land_cover_l48_20210604.zip/nlcd_2011_land_cover_l48_20210604.img nlcd_2011_land_cover_l48_20210604-WGS84.tif
 
 # Reproject CropScape Cropland Data Layer (CDL) to WGS84
-gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/2019_30m_cdls.zip/2019_30m_cdls.img 2019_30m_cdls.tif
+gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/2020_30m_cdls.zip/2020_30m_cdls.img 2020_30m_cdls.tif
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/2015_30m_cdls.zip/2015_30m_cdls.img 2015_30m_cdls.tif
 gdalwarp -multi -t_srs EPSG:4326 -of GTiff -co "COMPRESS=LZW" -co "ZLEVEL=9" /vsizip/2010_30m_cdls.zip/2010_30m_cdls.img 2010_30m_cdls.tif
 
@@ -52,5 +52,5 @@ rm -rf NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb \
   NHDPlusNationalData/WBDSnapshot_National.* \
   GovernmentUnits_National_GDB.zip \
   NLCD_2016_Land_Cover_L48_20190424.zip \
-  2019_30m_cdls.zip \
+  20*_30m_cdls.zip \
   rech48grd.tgz

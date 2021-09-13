@@ -17,7 +17,6 @@ import pandas as pd
 
 import carma_schema
 from carma_schema import get_water_use_data_for_huc12
-from carma_schema.types import AnalysisWaSSI
 
 from .. util import Geometry
 from .. exception import SchemaValidationException
@@ -33,7 +32,7 @@ DATA_BASENAMES = {'wbd': 'WBDSnapshot_National.spatialite',
                   'cdl': {
                       2010: '2010_30m_cdls.tif',
                       2015: '2015_30m_cdls.tif',
-                      2019: '2019_30m_cdls.tif'
+                      2020: '2020_30m_cdls.tif'
                     },
                   'rech48grd': 'rech48grd.tif'
                   }
